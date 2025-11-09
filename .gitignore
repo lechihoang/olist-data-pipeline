@@ -1,0 +1,33 @@
+# 1. Môi trường Ảo (Virtual Environments)
+# Thư mục này chứa hàng ngàn file thư viện, không bao giờ commit!
+.venv/
+venv/
+*.env
+.env
+
+# 2. File dữ liệu (Data)
+# Không bao giờ commit data, chỉ commit code.
+*.csv
+*.json
+*.parquet
+data/
+
+# 3. File nhạy cảm & Cấu hình Local
+# Rất quan trọng: Chứa token, mật khẩu...
+.dbt/profiles.yml
+*.private.key
+*.token
+logs/
+*.log
+
+# 4. Các file "rác" của Python
+# Các file này được Python tự động tạo ra
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 5. Các file "rác" của IDE / Editor
+.vscode/
+.idea/
+*.DS_Store
