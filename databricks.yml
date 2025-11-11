@@ -1,0 +1,120 @@
+bundle:
+  name: olist-data-pipeline
+
+targets:
+  default:
+    mode: development
+    default: true
+
+resources:
+  jobs:
+    bronze_pipeline_job:
+      name: "[Bronze] Olist Pipeline"
+      tasks:
+        - task_key: load_bronze_orders
+          description: "Nạp file 'orders' từ Volume vào bảng bronze.orders_raw"
+          notebook_task:
+            notebook_path: src/tasks/bronze/bronze.py
+            base_parameters:
+              source_dir_name: "orders"
+              target_table_name: "orders_raw"
+          new_cluster:
+            spark_version: "14.3.x-scala2.12"
+            node_type_id: "Standard_DS3_v2"
+            num_workers: 0
+
+        - task_key: load_bronze_customers
+          description: "Nạp file 'customers' vào bảng bronze.customers_raw"
+          notebook_task:
+            notebook_path: src/tasks/bronze/bronze.py
+            base_parameters:
+              source_dir_name: "customers"
+              target_table_name: "customers_raw"
+          new_cluster:
+            spark_version: "14.3.x-scala2.12"
+            node_type_id: "Standard_DS3_v2"
+            num_workers: 0
+
+        - task_key: load_bronze_order_items
+          description: "Nạp file 'order_items' vào bảng bronze.order_items_raw"
+          notebook_task:
+            notebook_path: src/tasks/bronze/bronze.py
+            base_parameters:
+              source_dir_name: "order_items"
+              target_table_name: "order_items_raw"
+          new_cluster:
+            spark_version: "14.3.x-scala2.12"
+            node_type_id: "Standard_DS3_v2"
+            num_workers: 0
+
+        - task_key: load_bronze_order_payments
+          description: "Nạp file 'order_payments' vào bảng bronze.order_payments_raw"
+          notebook_task:
+            notebook_path: src/tasks/bronze/bronze.py
+            base_parameters:
+              source_dir_name: "order_payments"
+              target_table_name: "order_payments_raw"
+          new_cluster:
+            spark_version: "14.3.x-scala2.12"
+            node_type_id: "Standard_DS3_v2"
+            num_workers: 0
+
+        - task_key: load_bronze_products
+          description: "Nạp file 'products' vào bảng bronze.products_raw"
+          notebook_task:
+            notebook_path: src/tasks/bronze/bronze.py
+            base_parameters:
+              source_dir_name: "products"
+              target_table_name: "products_raw"
+          new_cluster:
+            spark_version: "14.3.x-scala2.12"
+            node_type_id: "Standard_DS3_v2"
+            num_workers: 0
+
+        - task_key: load_bronze_sellers
+          description: "Nạp file 'sellers' vào bảng bronze.sellers_raw"
+          notebook_task:
+            notebook_path: src/tasks/bronze/bronze.py
+            base_parameters:
+              source_dir_name: "sellers"
+              target_table_name: "sellers_raw"
+          new_cluster:
+            spark_version: "14.3.x-scala2.12"
+            node_type_id: "Standard_DS3_v2"
+            num_workers: 0
+
+        - task_key: load_bronze_geolocation
+          description: "Nạp file 'geolocation' vào bảng bronze.geolocation_raw"
+          notebook_task:
+            notebook_path: src/tasks/bronze/bronze.py
+            base_parameters:
+              source_dir_name: "geolocation"
+              target_table_name: "geolocation_raw"
+          new_cluster:
+            spark_version: "14.3.x-scala2.12"
+            node_type_id: "Standard_DS3_v2"
+            num_workers: 0
+
+        - task_key: load_bronze_order_reviews
+          description: "Nạp file 'order_reviews' vào bảng bronze.order_reviews_raw"
+          notebook_task:
+            notebook_path: src/tasks/bronze/bronze.py
+            base_parameters:
+              source_dir_name: "order_reviews"
+              target_table_name: "order_reviews_raw"
+          new_cluster:
+            spark_version: "14.3.x-scala2.12"
+            node_type_id: "Standard_DS3_v2"
+            num_workers: 0
+
+        - task_key: load_bronze_product_translation
+          description: "Nạp file 'product_category_name_translation'..."
+          notebook_task:
+            notebook_path: src/tasks/bronze/bronze.py
+            base_parameters:
+              source_dir_name: "product_category_name_translation"
+              target_table_name: "product_category_name_translation_raw"
+          new_cluster:
+            spark_version: "14.3.x-scala2.12"
+            node_type_id: "Standard_DS3_v2"
+            num_workers: 0
