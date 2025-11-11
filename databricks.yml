@@ -1,44 +1,35 @@
-# Tên file: databricks.yml
-# --------------------
-# PHIÊN BẢN SỬA LỖI: "Only serverless compute is supported"
-#
-# THAY ĐỔI:
-# 1. Đã XÓA tất cả 9 khối 'new_cluster' phức tạp.
-# 2. Đã THAY THẾ bằng một khối 'new_cluster' RẤT ĐƠN GIẢN
-#    chỉ chứa 'spark_version'. Đây là cách yêu cầu "Serverless Compute".
-# --------------------
-
 bundle:
   name: olist-data-pipeline
 
-# Môi trường 'default'
 targets:
   default:
     mode: development
     default: true
 
-# Định nghĩa các "Tài nguyên" (Jobs, Pipelines...)
 resources:
   jobs:
-    # --- JOB [BRONZE] OLIST PIPELINE ---
     bronze_pipeline_job:
       name: "[Bronze] Olist Pipeline"
       
+      environments:
+        - environment_key: "Default"
+          spec:
+            environment_version: "4"
+
+      queue:
+        enabled: true
+
       tasks:
-        # --- Task 1: Nạp Orders ---
         - task_key: load_bronze_orders
           description: "Nạp file 'orders' từ Volume vào bảng bronze.orders_raw"
           notebook_task:
-            notebook_path: src/tasks/bronze/bronze.py
+            notebook_path: src/tasks/bronze/bronze.py 
             base_parameters:
               source_dir_name: "orders"
               target_table_name: "orders_raw"
           
-          # ⭐️ SỬA LỖI SERVERLESS (CÁCH LÀM CHUẨN)
-          new_cluster:
-            spark_version: "14.3.x-scala2.12" # ⚠️ Chỉ cần chỉ định phiên bản Spark
+          environment_key: "Default"
 
-        # --- Task 2: Nạp Customers ---
         - task_key: load_bronze_customers
           description: "Nạp file 'customers' vào bảng bronze.customers_raw"
           notebook_task:
@@ -46,12 +37,8 @@ resources:
             base_parameters:
               source_dir_name: "customers"
               target_table_name: "customers_raw"
-          
-          # ⭐️ SỬA LỖI SERVERLESS
-          new_cluster:
-            spark_version: "14.3.x-scala2.12"
+          environment_key: "Default"
 
-        # --- Task 3: Nạp Order Items ---
         - task_key: load_bronze_order_items
           description: "Nạp file 'order_items' vào bảng bronze.order_items_raw"
           notebook_task:
@@ -59,10 +46,8 @@ resources:
             base_parameters:
               source_dir_name: "order_items"
               target_table_name: "order_items_raw"
-          new_cluster:
-            spark_version: "14.3.x-scala2.12"
+          environment_key: "Default"
 
-        # --- Task 4: Nạp Order Payments ---
         - task_key: load_bronze_order_payments
           description: "Nạp file 'order_payments' vào bảng bronze.order_payments_raw"
           notebook_task:
@@ -70,10 +55,8 @@ resources:
             base_parameters:
               source_dir_name: "order_payments"
               target_table_name: "order_payments_raw"
-          new_cluster:
-            spark_version: "14.3.x-scala2.12"
+          environment_key: "Default"
 
-        # --- Task 5: Nạp Products ---
         - task_key: load_bronze_products
           description: "Nạp file 'products' vào bảng bronze.products_raw"
           notebook_task:
@@ -81,10 +64,8 @@ resources:
             base_parameters:
               source_dir_name: "products"
               target_table_name: "products_raw"
-          new_cluster:
-            spark_version: "14.3.x-scala2.12"
+          environment_key: "Default"
 
-        # --- Task 6: Nạp Sellers ---
         - task_key: load_bronze_sellers
           description: "Nạp file 'sellers' vào bảng bronze.sellers_raw"
           notebook_task:
@@ -92,10 +73,8 @@ resources:
             base_parameters:
               source_dir_name: "sellers"
               target_table_name: "sellers_raw"
-          new_cluster:
-            spark_version: "14.3.x-scala2.12"
+          environment_key: "Default"
 
-        # --- Task 7: Nạp Geolocation ---
         - task_key: load_bronze_geolocation
           description: "Nạp file 'geolocation' vào bảng bronze.geolocation_raw"
           notebook_task:
@@ -103,10 +82,8 @@ resources:
             base_parameters:
               source_dir_name: "geolocation"
               target_table_name: "geolocation_raw"
-          new_cluster:
-            spark_version: "14.3.x-scala2.12"
+          environment_key: "Default"
 
-        # --- Task 8: Nạp Order Reviews ---
         - task_key: load_bronze_order_reviews
           description: "Nạp file 'order_reviews' vào bảng bronze.order_reviews_raw"
           notebook_task:
@@ -114,10 +91,8 @@ resources:
             base_parameters:
               source_dir_name: "order_reviews"
               target_table_name: "order_reviews_raw"
-          new_cluster:
-            spark_version: "14.3.x-scala2.12"
+          environment_key: "Default"
 
-        # --- Task 9: Nạp Product Translation ---
         - task_key: load_bronze_product_translation
           description: "Nạp file 'product_category_name_translation'..."
           notebook_task:
@@ -125,5 +100,4 @@ resources:
             base_parameters:
               source_dir_name: "product_category_name_translation"
               target_table_name: "product_category_name_translation_raw"
-          new_cluster:
-            spark_version: "14.3.x-scala2.12"
+          environment_key: "Default"
