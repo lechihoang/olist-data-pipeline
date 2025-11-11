@@ -23,7 +23,7 @@ resources:
         - task_key: load_bronze_orders
           description: "Nạp file 'orders' từ Volume vào bảng bronze.orders_raw"
           notebook_task:
-            notebook_path: src/tasks/bronze/00_bronze_loader.py
+            notebook_path: src/tasks/bronze/bronze.py
             base_parameters:
               source_dir_name: "orders"
               target_table_name: "orders_raw"
@@ -42,7 +42,7 @@ resources:
         - task_key: load_bronze_customers
           description: "Nạp file 'customers' vào bảng bronze.customers_raw"
           notebook_task:
-            notebook_path: src/tasks/bronze/00_bronze_loader.py
+            notebook_path: src/tasks/bronze/bronze.py
             base_parameters:
               source_dir_name: "customers"
               target_table_name: "customers_raw"
@@ -61,7 +61,7 @@ resources:
         - task_key: load_bronze_order_items
           # ... (Lặp lại tương tự cho 7 task còn lại) ...
           notebook_task:
-            notebook_path: src/tasks/bronze/00_bronze_loader.py
+            notebook_path: src/tasks/bronze/bronze.py
             base_parameters:
               source_dir_name: "order_items"
               target_table_name: "order_items_raw"
@@ -78,7 +78,7 @@ resources:
         # --- Task 4: Nạp Order Payments ---
         - task_key: load_bronze_order_payments
           notebook_task:
-            notebook_path: src/tasks/bronze/00_bronze_loader.py
+            notebook_path: src/tasks/bronze/bronze.py
             base_parameters:
               source_dir_name: "order_payments"
               target_table_name: "order_payments_raw"
@@ -95,7 +95,7 @@ resources:
         # --- Task 5: Nạp Products ---
         - task_key: load_bronze_products
           notebook_task:
-            notebook_path: src/tasks/bronze/00_bronze_loader.py
+            notebook_path: src/tasks/bronze/bronze.py
             base_parameters:
               source_dir_name: "products"
               target_table_name: "products_raw"
@@ -112,7 +112,7 @@ resources:
         # --- Task 6: Nạp Sellers ---
         - task_key: load_bronze_sellers
           notebook_task:
-            notebook_path: src/tasks/bronze/00_bronze_loader.py
+            notebook_path: src/tasks/bronze/bronze.py
             base_parameters:
               source_dir_name: "sellers"
               target_table_name: "sellers_raw"
@@ -129,7 +129,7 @@ resources:
         # --- Task 7: Nạp Geolocation ---
         - task_key: load_bronze_geolocation
           notebook_task:
-            notebook_path: src/tasks/bronze/00_bronze_loader.py
+            notebook_path: src/tasks/bronze/bronze.py
             base_parameters:
               source_dir_name: "geolocation"
               target_table_name: "geolocation_raw"
@@ -146,7 +146,7 @@ resources:
         # --- Task 8: Nạp Order Reviews ---
         - task_key: load_bronze_order_reviews
           notebook_task:
-            notebook_path: src/tasks/bronze/00_bronze_loader.py
+            notebook_path: src/tasks/bronze/bronze.py
             base_parameters:
               source_dir_name: "order_reviews"
               target_table_name: "order_reviews_raw"
@@ -163,7 +163,7 @@ resources:
         # --- Task 9: Nạp Product Translation ---
         - task_key: load_bronze_product_translation
           notebook_task:
-            notebook_path: src/tasks/bronze/00_bronze_loader.py
+            notebook_path: src/tasks/bronze/bronze.py
             base_parameters:
               source_dir_name: "product_category_name_translation"
               target_table_name: "product_category_name_translation_raw"

@@ -1,3 +1,4 @@
+# Databricks notebook source
 # Tên file: src/tasks/bronze.py
 # --------------------
 # ⚠️ CHẠY FILE NÀY TRÊN DATABRICKS JOB
