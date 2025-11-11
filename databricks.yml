@@ -1,3 +1,9 @@
+# Tên file: databricks.yml
+# --------------------
+# PHIÊN BẢN SỬA LỖI:
+# 1. Thêm cấu hình 'Single Node' (spark_conf, custom_tags)
+# --------------------
+
 bundle:
   name: olist-data-pipeline
 
@@ -8,13 +14,16 @@ targets:
 
 resources:
   jobs:
+    # --- JOB [BRONZE] OLIST PIPELINE ---
     bronze_pipeline_job:
       name: "[Bronze] Olist Pipeline"
+      
       tasks:
+        # --- Task 1: Nạp Orders ---
         - task_key: load_bronze_orders
           description: "Nạp file 'orders' từ Volume vào bảng bronze.orders_raw"
           notebook_task:
-            notebook_path: src/tasks/bronze/bronze.py
+            notebook_path: src/tasks/bronze/00_bronze_loader.py
             base_parameters:
               source_dir_name: "orders"
               target_table_name: "orders_raw"
@@ -22,11 +31,18 @@ resources:
             spark_version: "14.3.x-scala2.12"
             node_type_id: "Standard_DS3_v2"
             num_workers: 0
+            # --- SỬA CẢNH BÁO (THÊM KHỐI NÀY) ---
+            spark_conf:
+              spark.databricks.cluster.profile: singleNode
+              spark.master: local[*]
+            custom_tags:
+              ResourceClass: SingleNode
 
+        # --- Task 2: Nạp Customers ---
         - task_key: load_bronze_customers
           description: "Nạp file 'customers' vào bảng bronze.customers_raw"
           notebook_task:
-            notebook_path: src/tasks/bronze/bronze.py
+            notebook_path: src/tasks/bronze/00_bronze_loader.py
             base_parameters:
               source_dir_name: "customers"
               target_table_name: "customers_raw"
@@ -34,11 +50,18 @@ resources:
             spark_version: "14.3.x-scala2.12"
             node_type_id: "Standard_DS3_v2"
             num_workers: 0
+            # --- SỬA CẢNH BÁO (THÊM KHỐI NÀY) ---
+            spark_conf:
+              spark.databricks.cluster.profile: singleNode
+              spark.master: local[*]
+            custom_tags:
+              ResourceClass: SingleNode
 
+        # --- Task 3: Nạp Order Items ---
         - task_key: load_bronze_order_items
-          description: "Nạp file 'order_items' vào bảng bronze.order_items_raw"
+          # ... (Lặp lại tương tự cho 7 task còn lại) ...
           notebook_task:
-            notebook_path: src/tasks/bronze/bronze.py
+            notebook_path: src/tasks/bronze/00_bronze_loader.py
             base_parameters:
               source_dir_name: "order_items"
               target_table_name: "order_items_raw"
@@ -46,11 +69,16 @@ resources:
             spark_version: "14.3.x-scala2.12"
             node_type_id: "Standard_DS3_v2"
             num_workers: 0
-
+            spark_conf:
+              spark.databricks.cluster.profile: singleNode
+              spark.master: local[*]
+            custom_tags:
+              ResourceClass: SingleNode
+        
+        # --- Task 4: Nạp Order Payments ---
         - task_key: load_bronze_order_payments
-          description: "Nạp file 'order_payments' vào bảng bronze.order_payments_raw"
           notebook_task:
-            notebook_path: src/tasks/bronze/bronze.py
+            notebook_path: src/tasks/bronze/00_bronze_loader.py
             base_parameters:
               source_dir_name: "order_payments"
               target_table_name: "order_payments_raw"
@@ -58,11 +86,16 @@ resources:
             spark_version: "14.3.x-scala2.12"
             node_type_id: "Standard_DS3_v2"
             num_workers: 0
+            spark_conf:
+              spark.databricks.cluster.profile: singleNode
+              spark.master: local[*]
+            custom_tags:
+              ResourceClass: SingleNode
 
+        # --- Task 5: Nạp Products ---
         - task_key: load_bronze_products
-          description: "Nạp file 'products' vào bảng bronze.products_raw"
           notebook_task:
-            notebook_path: src/tasks/bronze/bronze.py
+            notebook_path: src/tasks/bronze/00_bronze_loader.py
             base_parameters:
               source_dir_name: "products"
               target_table_name: "products_raw"
@@ -70,11 +103,16 @@ resources:
             spark_version: "14.3.x-scala2.12"
             node_type_id: "Standard_DS3_v2"
             num_workers: 0
+            spark_conf:
+              spark.databricks.cluster.profile: singleNode
+              spark.master: local[*]
+            custom_tags:
+              ResourceClass: SingleNode
 
+        # --- Task 6: Nạp Sellers ---
         - task_key: load_bronze_sellers
-          description: "Nạp file 'sellers' vào bảng bronze.sellers_raw"
           notebook_task:
-            notebook_path: src/tasks/bronze/bronze.py
+            notebook_path: src/tasks/bronze/00_bronze_loader.py
             base_parameters:
               source_dir_name: "sellers"
               target_table_name: "sellers_raw"
@@ -82,11 +120,16 @@ resources:
             spark_version: "14.3.x-scala2.12"
             node_type_id: "Standard_DS3_v2"
             num_workers: 0
+            spark_conf:
+              spark.databricks.cluster.profile: singleNode
+              spark.master: local[*]
+            custom_tags:
+              ResourceClass: SingleNode
 
+        # --- Task 7: Nạp Geolocation ---
         - task_key: load_bronze_geolocation
-          description: "Nạp file 'geolocation' vào bảng bronze.geolocation_raw"
           notebook_task:
-            notebook_path: src/tasks/bronze/bronze.py
+            notebook_path: src/tasks/bronze/00_bronze_loader.py
             base_parameters:
               source_dir_name: "geolocation"
               target_table_name: "geolocation_raw"
@@ -94,11 +137,16 @@ resources:
             spark_version: "14.3.x-scala2.12"
             node_type_id: "Standard_DS3_v2"
             num_workers: 0
+            spark_conf:
+              spark.databricks.cluster.profile: singleNode
+              spark.master: local[*]
+            custom_tags:
+              ResourceClass: SingleNode
 
+        # --- Task 8: Nạp Order Reviews ---
         - task_key: load_bronze_order_reviews
-          description: "Nạp file 'order_reviews' vào bảng bronze.order_reviews_raw"
           notebook_task:
-            notebook_path: src/tasks/bronze/bronze.py
+            notebook_path: src/tasks/bronze/00_bronze_loader.py
             base_parameters:
               source_dir_name: "order_reviews"
               target_table_name: "order_reviews_raw"
@@ -106,11 +154,16 @@ resources:
             spark_version: "14.3.x-scala2.12"
             node_type_id: "Standard_DS3_v2"
             num_workers: 0
+            spark_conf:
+              spark.databricks.cluster.profile: singleNode
+              spark.master: local[*]
+            custom_tags:
+              ResourceClass: SingleNode
 
+        # --- Task 9: Nạp Product Translation ---
         - task_key: load_bronze_product_translation
-          description: "Nạp file 'product_category_name_translation'..."
           notebook_task:
-            notebook_path: src/tasks/bronze/bronze.py
+            notebook_path: src/tasks/bronze/00_bronze_loader.py
             base_parameters:
               source_dir_name: "product_category_name_translation"
               target_table_name: "product_category_name_translation_raw"
@@ -118,3 +171,8 @@ resources:
             spark_version: "14.3.x-scala2.12"
             node_type_id: "Standard_DS3_v2"
             num_workers: 0
+            spark_conf:
+              spark.databricks.cluster.profile: singleNode
+              spark.master: local[*]
+            custom_tags:
+              ResourceClass: SingleNode
