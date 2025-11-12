@@ -5,13 +5,13 @@
 # --------------------
 # ⚠️ CHẠY FILE NÀY TRÊN DATABRICKS JOB
 # --------------------
-# (Phiên bản đã SỬA LỖI: Dùng 'to_timestamp' tường minh)
+# (Phiên bản đã SỬA LỖI: Dùng 'try_to_timestamp' để xử lý data "bẩn")
 
 import sys
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, to_timestamp # ⭐️ IMPORT HÀM MỚI
+from pyspark.sql.functions import col, try_to_timestamp # ⭐️ THAY ĐỔI: Dùng 'try_to_timestamp'
 from delta.tables import DeltaTable
-# (Không cần import DBUtils vì chúng ta đã xóa ở lần sửa trước)
+# (Không cần import DBUtils)
 
 # --- HÀM LOGIC CHÍNH (Giữ nguyên) ---
 def process_silver_order_reviews(spark: SparkSession, bronze_table_name: str, silver_table_name: str, checkpoint_path: str):
@@ -22,8 +22,7 @@ def process_silver_order_reviews(spark: SparkSession, bronze_table_name: str, si
 
     bronze_df = spark.readStream.table(bronze_table_name)
     
-    # ⭐️ ĐỊNH NGHĨA ĐỊNH DẠNG (FORMAT)
-    # (Chúng ta biết Olist dùng định dạng này)
+    # Định dạng (format)
 
     # 2. Logic "Làm sạch" (Transform)
     silver_df = (bronze_df
@@ -34,13 +33,12 @@ def process_silver_order_reviews(spark: SparkSession, bronze_table_name: str, si
             col("review_comment_title").cast("string"),
             col("review_comment_message").cast("string"),
             
-            # ⭐️ SỬA LỖI: Dùng 'to_timestamp' tường minh
-            to_timestamp(col("review_creation_date"), "yyyy-MM-dd HH:mm:ss").alias("review_creation_date"),
-            to_timestamp(col("review_answer_timestamp"), "yyyy-MM-dd HH:mm:ss").alias("review_answer_timestamp")
+            # ⭐️ SỬA LỖI: Dùng 'try_to_timestamp' (an toàn)
+            # Nếu gặp text bẩn, nó sẽ trả về NULL thay vì crash
+            try_to_timestamp(col("review_creation_date"), "yyyy-MM-dd HH:mm:ss").alias("review_creation_date"),
+            try_to_timestamp(col("review_answer_timestamp"), "yyyy-MM-dd HH:mm:ss").alias("review_answer_timestamp")
         )
         .where("review_id IS NOT NULL AND order_id IS NOT NULL")
-        # (Bạn có thể thêm .where("review_creation_date IS NOT NULL")
-        #  nếu muốn lọc bỏ các dòng bị ép kiểu lỗi)
     )
 
     # 3. Hàm để chạy logic MERGE (Upsert) - (Giữ nguyên)
