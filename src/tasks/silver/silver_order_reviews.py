@@ -23,6 +23,7 @@ def process_silver_order_reviews(spark: SparkSession, bronze_table_name: str, si
     bronze_df = spark.readStream.table(bronze_table_name)
     
     # Định dạng (format)
+    ts_format = "yyyy-MM-dd HH:mm:ss"
 
     # 2. Logic "Làm sạch" (Transform)
     silver_df = (bronze_df
@@ -35,8 +36,9 @@ def process_silver_order_reviews(spark: SparkSession, bronze_table_name: str, si
             
             # ⭐️ SỬA LỖI: Dùng 'try_to_timestamp' (an toàn)
             # Nếu gặp text bẩn, nó sẽ trả về NULL thay vì crash
-            try_to_timestamp(col("review_creation_date"), "yyyy-MM-dd HH:mm:ss").alias("review_creation_date"),
-            try_to_timestamp(col("review_answer_timestamp"), "yyyy-MM-dd HH:mm:ss").alias("review_answer_timestamp")
+            # (Và đảm bảo CÓ dấu ngoặc kép)
+            try_to_timestamp(col("review_creation_date"), ts_format).alias("review_creation_date"),
+            try_to_timestamp(col("review_answer_timestamp"), ts_format).alias("review_answer_timestamp")
         )
         .where("review_id IS NOT NULL AND order_id IS NOT NULL")
     )
