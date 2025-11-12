@@ -1,0 +1,7 @@
+[
+    { "name": "order_id", "type": "string", "nullable": true },
+    { "name": "payment_sequential", "type": "integer", "nullable": true },
+    { "name": "payment_type", "type": "string", "nullable": true },
+    { "name": "payment_installments", "type": "integer", "nullable": true },
+    { "name": "payment_value", "type": "double", "nullable": true }
+]

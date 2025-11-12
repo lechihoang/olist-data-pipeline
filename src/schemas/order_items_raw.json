@@ -1,0 +1,9 @@
+[
+    { "name": "order_id", "type": "string", "nullable": true },
+    { "name": "order_item_id", "type": "integer", "nullable": true },
+    { "name": "product_id", "type": "string", "nullable": true },
+    { "name": "seller_id", "type": "string", "nullable": true },
+    { "name": "shipping_limit_date", "type": "string", "nullable": true },
+    { "name": "price", "type": "double", "nullable": true },
+    { "name": "freight_value", "type": "double", "nullable": true }
+]

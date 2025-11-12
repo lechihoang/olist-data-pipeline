@@ -1,0 +1,7 @@
+[
+    { "name": "geolocation_zip_code_prefix", "type": "string", "nullable": true },
+    { "name": "geolocation_lat", "type": "double", "nullable": true },
+    { "name": "geolocation_lng", "type": "double", "nullable": true },
+    { "name": "geolocation_city", "type": "string", "nullable": true },
+    { "name": "geolocation_state", "type": "string", "nullable": true }
+]

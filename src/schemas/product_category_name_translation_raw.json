@@ -1,0 +1,4 @@
+[
+    { "name": "product_category_name", "type": "string", "nullable": true },
+    { "name": "product_category_name_english", "type": "string", "nullable": true }
+]

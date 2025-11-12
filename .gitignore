@@ -8,7 +8,6 @@ venv/
 # 2. File dữ liệu (Data)
 # Không bao giờ commit data, chỉ commit code.
 *.csv
-*.json
 *.parquet
 data/
 
