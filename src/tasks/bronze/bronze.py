@@ -28,18 +28,8 @@ def get_spark_type(type_name: str):
 
 # --- HÀM HỖ TRỢ 2 (⭐️ ĐÃ SỬA LỖI PATH) ---
 def load_schema_from_json(table_name: str) -> StructType:
-    
-    # ⭐️ SỬA LỖI PATH: Dùng os.getcwd() (Current Working Directory)
-    
-    # 1. LẤY THƯ MỤC LÀM VIỆC HIỆN TẠI (CWD)
-    #    (Khi 'bundle deploy', đây sẽ là thư mục gốc của repo)
-    cwd = os.getcwd() 
-    
-    # 2. XÂY DỰNG ĐƯỜNG DẪN TỪ CWD
-    #    (ví dụ: /Workspace/Repos/user/repo/src/schemas/geolocation_raw.json)
-    schema_path = os.path.join(cwd, "src", "schemas", f"{table_name}.json")
-    
-    print(f"  Đang đọc schema (từ CWD) tại: {schema_path}")
+    schema_path = f"/Workspace/Users/lechihoang73@gmail.com/olist-data-pipeline/src/schemas/{table_name}.json"
+    print(f"  Đang đọc schema tại: {schema_path}")
     
     fields = []
     
