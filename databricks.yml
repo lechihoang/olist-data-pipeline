@@ -8,8 +8,8 @@ targets:
 
 resources:
   jobs:
-    bronze_pipeline_job:
-      name: "[Bronze-Silver] Olist Pipeline"
+    olist_pipeline_job: 
+      name: "[Bronze-Silver] Olist Pipeline" 
       
       environments:
         - environment_key: "Default"
@@ -20,14 +20,16 @@ resources:
         enabled: true
 
       tasks:
+        # -----------------------------------------------
+        # --- TẦNG BRONZE (9 TASKS - GIỮ NGUYÊN) ---
+        # -----------------------------------------------
         - task_key: load_bronze_orders
           description: "Nạp file 'orders' từ Volume vào bảng bronze.orders_raw"
           notebook_task:
-            notebook_path: src/tasks/bronze/bronze.py 
+            notebook_path: src/tasks/bronze/bronze.py # ⭐️ Dùng đường dẫn tương đối
             base_parameters:
               source_dir_name: "orders"
               target_table_name: "orders_raw"
-          
           environment_key: "Default"
 
         - task_key: load_bronze_customers
@@ -100,4 +102,101 @@ resources:
             base_parameters:
               source_dir_name: "product_category_name_translation"
               target_table_name: "product_category_name_translation_raw"
+          environment_key: "Default"
+
+        # -----------------------------------------------
+        # --- TẦNG SILVER (8 TASKS MỚI) ---
+        # -----------------------------------------------
+
+        - task_key: process_silver_geolocation
+          description: "Dọn dẹp (Dedupe) và GHI ĐÈ bảng Geolocation"
+          # ⭐️ Cú pháp 'depends_on' chuẩn
+          depends_on: 
+            - task_key: load_bronze_geolocation 
+          notebook_task:
+            notebook_path: src/tasks/silver/silver_geolocation.py
+            base_parameters:
+              bronze_table_input: "geolocation_raw"
+              silver_table_output: "geolocation"
+          environment_key: "Default"
+          
+        - task_key: process_silver_customers
+          description: "Làm sạch, Làm giàu (JOIN Geo), và MERGE bảng Customers"
+          depends_on: 
+            - task_key: load_bronze_customers
+            - task_key: process_silver_geolocation
+          notebook_task:
+            notebook_path: src/tasks/silver/silver_customers.py
+            base_parameters:
+              bronze_table_input: "customers_raw"
+              silver_geo_table_input: "geolocation"
+              silver_table_output: "customers"
+          environment_key: "Default"
+
+        - task_key: process_silver_products
+          description: "Làm sạch, Dịch, và MERGE bảng Products"
+          depends_on: 
+            - task_key: load_bronze_products
+            - task_key: load_bronze_product_translation
+          notebook_task:
+            notebook_path: src/tasks/silver/silver_products.py
+            base_parameters:
+              bronze_products_table_input: "products_raw"
+              bronze_translation_table_input: "product_category_name_translation_raw"
+              silver_products_table_output: "products"
+          environment_key: "Default"
+
+        - task_key: process_silver_sellers
+          description: "Làm sạch và MERGE bảng Sellers"
+          depends_on: 
+            - task_key: load_bronze_sellers
+          notebook_task:
+            notebook_path: src/tasks/silver/silver_sellers.py
+            base_parameters:
+              bronze_table_input: "sellers_raw"
+              silver_table_output: "sellers"
+          environment_key: "Default"
+
+        - task_key: process_silver_orders
+          description: "Làm sạch và MERGE bảng Orders (cập nhật status)"
+          depends_on: 
+            - task_key: load_bronze_orders
+          notebook_task:
+            notebook_path: src/tasks/silver/silver_orders.py
+            base_parameters:
+              bronze_table_input: "orders_raw"
+              silver_table_output: "orders"
+          environment_key: "Default"
+
+        - task_key: process_silver_order_items
+          description: "Làm sạch và MERGE bảng Order Items"
+          depends_on: 
+            - task_key: load_bronze_order_items
+          notebook_task:
+            notebook_path: src/tasks/silver/silver_order_items.py
+            base_parameters:
+              bronze_table_input: "order_items_raw"
+              silver_table_output: "order_items"
+          environment_key: "Default"
+
+        - task_key: process_silver_order_payments
+          description: "Làm sạch và MERGE bảng Order Payments"
+          depends_on: 
+            - task_key: load_bronze_order_payments
+          notebook_task:
+            notebook_path: src/tasks/silver/silver_order_payments.py
+            base_parameters:
+              bronze_table_input: "order_payments_raw"
+              silver_table_output: "order_payments"
+          environment_key: "Default"
+
+        - task_key: process_silver_order_reviews
+          description: "Làm sạch và MERGE bảng Order Reviews"
+          depends_on: 
+            - task_key: load_bronze_order_reviews
+          notebook_task:
+            notebook_path: src/tasks/silver/silver_order_reviews.py
+            base_parameters:
+              bronze_table_input: "order_reviews_raw"
+              silver_table_output: "order_reviews"
           environment_key: "Default"
