@@ -1,0 +1,43 @@
+# Tên file: dbt_olist/dbt_project.yml
+# --------------------
+# PHIÊN BẢN "CHUẨN" ĐẦY ĐỦ
+# --------------------
+
+# Tên dự án (phải khớp với tên thư mục 'dbt_olist')
+name: 'dbt_olist'
+version: '1.0.0'
+config-version: 2
+
+# Tên "profile" (cấu hình kết nối)
+# (File này được 'dbt init' tự động tạo và đặt tên)
+profile: 'dbt_olist'
+
+# Đường dẫn nơi dbt sẽ tìm code SQL
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+
+# ----------------------------------------------------
+# ⭐️ PHẦN CẤU HÌNH QUAN TRỌNG (ĐÃ SỬA) ⭐️
+# ----------------------------------------------------
+models:
+  # Tên dự án của bạn (phải khớp với 'name:' ở trên)
+  dbt_olist:
+
+    # Cấu hình cho thư mục 'staging' (nơi chứa 'sources.yml')
+    staging:
+      # Chúng ta không "hiện thực hóa" (materialize) bất cứ thứ gì ở đây
+      +materialized: view 
+
+    # ⭐️ CẤU HÌNH CHO TẦNG GOLD (QUAN TRỌNG)
+    gold:
+      +materialized: table      # ⭐️ "Hãy tạo BẢNG (Table)"           # ⭐️ "Hãy ghi vào schema 'gold'"
+      +database: olist_project  # ⭐️ "Bên trong catalog 'olist_project'"

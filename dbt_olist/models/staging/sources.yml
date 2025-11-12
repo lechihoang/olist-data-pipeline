@@ -1,0 +1,23 @@
+# Tên file: dbt_olist/models/staging/sources.yml
+# Mục đích: "Đăng ký" các bảng Tầng Silver (nguồn)
+
+version: 2
+
+sources:
+  # Đây là "nhóm" nguồn, bạn có thể đặt tên tùy ý
+  - name: olist_silver
+
+    # ⭐️ Đây là 2 dòng quan trọng nhất
+    database: olist_project # "Kho" (Catalog)
+    schema: silver         # "Ngăn" (Schema)
+
+    # Liệt kê các bảng Silver "sạch" của bạn
+    tables:
+      - name: customers
+      - name: geolocation
+      - name: orders
+      - name: order_items
+      - name: order_payments
+      - name: order_reviews
+      - name: products
+      - name: sellers
