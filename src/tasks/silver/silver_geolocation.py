@@ -3,6 +3,7 @@
 import sys
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, upper, avg, first
+from pyspark.dbutils import DBUtils 
 
 def process_silver_geolocation(spark: SparkSession, bronze_table_name: str, silver_table_name: str):
 

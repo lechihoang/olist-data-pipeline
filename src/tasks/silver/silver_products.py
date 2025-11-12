@@ -4,6 +4,7 @@ import sys
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
 from delta.tables import DeltaTable
+from pyspark.dbutils import DBUtils 
 
 
 def process_silver_products(spark: SparkSession, bronze_products_table: str, bronze_translation_table: str, silver_products_table: str, checkpoint_path: str):

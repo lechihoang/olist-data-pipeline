@@ -23,7 +23,7 @@ def process_silver_order_reviews(spark: SparkSession, bronze_table_name: str, si
     bronze_df = spark.readStream.table(bronze_table_name)
     
     # ⭐️ ĐỊNH NGHĨA ĐỊNH DẠNG (FORMAT)
-    # (Chúng ta biết Olist dùng định dạng này
+    # (Chúng ta biết Olist dùng định dạng này)
 
     # 2. Logic "Làm sạch" (Transform)
     silver_df = (bronze_df
