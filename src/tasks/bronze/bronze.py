@@ -1,16 +1,12 @@
 # Databricks notebook source
-
 import sys
 import json
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, current_timestamp
+from pyspark.dbutils import DBUtils
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType, TimestampType, BooleanType
 
-
 def get_spark_type(type_name: str):
-    """
-    Chuyển đổi tên kiểu (string) từ JSON thành đối tượng Kiểu (Type) của Spark.
-    """
     type_map = {
         "string": StringType(),
         "integer": IntegerType(),
@@ -18,55 +14,39 @@ def get_spark_type(type_name: str):
         "timestamp": TimestampType(),
         "boolean": BooleanType()
     }
-    
     return type_map.get(type_name.lower(), StringType()) 
 
-
 def load_schema_from_json(table_name: str) -> StructType:
-    """
-    Đọc file schema (ví dụ: 'orders_raw.json') 
-    và biến nó thành một đối tượng StructType của Spark.
-    (Giả định file JSON luôn tồn tại và đúng cú pháp).
-    """
     print(f"  Đang đọc schema từ: ../schemas/{table_name}.json")
-    
     schema_path = f"../schemas/{table_name}.json"
     
     fields = []
     
-    
     with open(schema_path, 'r') as f:
         schema_json = json.load(f)
-        
-        
         for col_def in schema_json:
             fields.append(
                 StructField(
                     col_def['name'],
                     get_spark_type(col_def['type']),
-                    col_def.get('nullable', True) 
+                    col_def.get('nullable', True)
                 )
             )
             
     print("  Đọc schema thành công.")
     return StructType(fields)
 
-
 def load_bronze(spark: SparkSession, landing_volume_path: str, bronze_table_name: str, checkpoint_path: str, schema_obj: StructType):
-    """
-    Sử dụng Auto Loader (cloudFiles) để nạp dữ liệu từ landing_volume_path
-    vào bảng Bronze (bronze_table_name) theo chế độ batch.
-    """
+    
     print(f"Bắt đầu Auto Loader (Chế độ Batch - Dùng Schema tường minh):")
     print(f"  ĐỌC TỪ: {landing_volume_path}")
     print(f"  GHI VÀO: {bronze_table_name}")
-    
     
     (spark.readStream
         .format("cloudFiles")
         .option("cloudFiles.format", "csv")
         .option("header", "true")
-        .schema(schema_obj)              
+        .schema(schema_obj)
         .option("cloudFiles.schemaLocation", checkpoint_path)
         .option("maxFilesPerTrigger", 10) 
         .load(landing_volume_path)
@@ -74,36 +54,27 @@ def load_bronze(spark: SparkSession, landing_volume_path: str, bronze_table_name
         .withColumn("_source_file", col("_metadata.file_path"))
         .withColumn("_ingest_timestamp", current_timestamp())
         
-        
         .writeStream
         .format("delta")
         .outputMode("append")
         .option("checkpointLocation", checkpoint_path)
         .option("mergeSchema", "true")
-        .trigger(availableNow=True) 
+        .trigger(availableNow=True)
         .toTable(bronze_table_name)
     )
     
     print(f"Hoàn thành nạp dữ liệu vào bảng: {bronze_table_name}")
 
-
 if __name__ == "__main__":
     
-    
     spark = SparkSession.builder.getOrCreate()
-    
-    # Lấy parameters từ command line thay vì dbutils.widgets
-    if len(sys.argv) < 3:
-        print("Usage: python bronze.py <source_dir_name> <target_table_name>")
-        sys.exit(1)
+    dbutils = DBUtils(spark) 
         
-    source_dir_name = sys.argv[1]
-    target_table_name = sys.argv[2]
-    
+    source_dir_name = dbutils.widgets.get("source_dir_name")
+    target_table_name = dbutils.widgets.get("target_table_name")
     
     loaded_schema = load_schema_from_json(target_table_name)
         
-    
     CATALOG = "olist_project"
     STAGING_SCHEMA = "staging"
     BRONZE_SCHEMA = "bronze"
@@ -113,7 +84,6 @@ if __name__ == "__main__":
     bronze_table_full_name = f"{CATALOG}.{BRONZE_SCHEMA}.{target_table_name}"
     checkpoint_path = f"/Volumes/{CATALOG}/{STAGING_SCHEMA}/checkpoints/{target_table_name}"
     
-    
     print("--- Cấu hình Task ---")
     print(f"  Source Dir (Param):     {source_dir_name}")
     print(f"  Target Table (Param):   {target_table_name}")
@@ -121,6 +91,5 @@ if __name__ == "__main__":
     print(f"  Bronze Table Full Name: {bronze_table_full_name}")
     print(f"  Checkpoint Path:      {checkpoint_path}")
     print("-------------------------")
-    
     
     load_bronze(spark, landing_volume_path, bronze_table_full_name, checkpoint_path, loaded_schema)
