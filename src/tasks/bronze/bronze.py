@@ -5,11 +5,12 @@
 # --------------------
 # ⚠️ CHẠY FILE NÀY TRÊN DATABRICKS JOB
 # --------------------
-# (Phiên bản "Sửa lỗi Path": Dùng 'os.getcwd()' thay vì '__file__')
+# (Phiên bản "Sửa lỗi Path": Dùng đường dẫn "Tuyệt đối" (hard-coded)
+#  và "Sửa lỗi Syntax": Dùng dấu '.' cho tên bảng)
 
 import sys
 import json
-import os # ⭐️ IMPORT OS
+import os
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, current_timestamp
 from pyspark.dbutils import DBUtils
@@ -26,14 +27,16 @@ def get_spark_type(type_name: str):
     }
     return type_map.get(type_name.lower(), StringType()) 
 
-# --- HÀM HỖ TRỢ 2 (⭐️ ĐÃ SỬA LỖI PATH) ---
+# --- HÀM HỖ TRỢ 2 (Đã sửa lỗi Path) ---
 def load_schema_from_json(table_name: str) -> StructType:
+    
+    # ⭐️ DÙNG ĐƯỜNG DẪN TUYỆT ĐỐI (HARD-CODED)
     schema_path = f"/Workspace/Users/lechihoang73@gmail.com/olist-data-pipeline/src/schemas/{table_name}.json"
-    print(f"  Đang đọc schema tại: {schema_path}")
+    
+    print(f"  Đang đọc schema (tuyệt đối) từ: {schema_path}")
     
     fields = []
     
-    # Mở file bằng đường dẫn tuyệt đối (sẽ tìm thấy)
     with open(schema_path, 'r') as f:
         schema_json = json.load(f)
         for col_def in schema_json:
@@ -53,9 +56,10 @@ def load_bronze(spark: SparkSession, landing_volume_path: str, bronze_table_name
     
     print(f"Bắt đầu Auto Loader (Chế độ Batch - Dùng Schema tường minh):")
     print(f"  ĐỌC TỪ: {landing_volume_path}")
-    print(f"  GHI VÀO: {bronze_table_name}")
+    print(f"  GHI VÀO: {bronze_table_name}") # ⭐️ Tên đúng sẽ được in ra ở đây
     
     (spark.readStream
+        # ... (code .format, .option, .schema... giữ nguyên) ...
         .format("cloudFiles")
         .option("cloudFiles.format", "csv")
         .option("header", "true")
@@ -73,12 +77,12 @@ def load_bronze(spark: SparkSession, landing_volume_path: str, bronze_table_name
         .option("checkpointLocation", checkpoint_path)
         .option("mergeSchema", "true")
         .trigger(availableNow=True)
-        .toTable(bronze_table_name)
+        .toTable(bronze_table_name) # ⭐️ Ghi vào tên đúng
     )
     
     print(f"Hoàn thành nạp dữ liệu vào bảng: {bronze_table_name}")
 
-# --- ĐIỂM BẮT ĐẦU CHẠY (Giữ nguyên) ---
+# --- ĐIỂM BẮT ĐẦU CHẠY (ENTRYPOINT) ---
 if __name__ == "__main__":
     
     spark = SparkSession.builder.getOrCreate()
@@ -86,9 +90,6 @@ if __name__ == "__main__":
         
     source_dir_name = dbutils.widgets.get("source_dir_name")
     target_table_name = dbutils.widgets.get("target_table_name")
-    
-    # In ra CWD (theo yêu cầu của bạn) để kiểm tra
-    print(f"⭐️ DEBUG: Thư mục làm việc hiện tại (CWD) là: {os.getcwd()}")
     
     loaded_schema = load_schema_from_json(target_table_name)
         
@@ -98,14 +99,17 @@ if __name__ == "__main__":
     LANDING_VOLUME = "landing_zone"
 
     landing_volume_path = f"/Volumes/{CATALOG}/{STAGING_SCHEMA}/{LANDING_VOLUME}/{source_dir_name}"
-    bronze_table_full_name = f"{CATALOG}/{BRONZE_SCHEMA}.{target_table_name}"
+    
+    # ⭐️ SỬA LỖI CÚ PHÁP: Đổi '/' thành '.'
+    bronze_table_full_name = f"{CATALOG}.{BRONZE_SCHEMA}.{target_table_name}"
+    
     checkpoint_path = f"/Volumes/{CATALOG}/{STAGING_SCHEMA}/checkpoints/{target_table_name}"
     
     print("--- Cấu hình Task ---")
     print(f"  Source Dir (Param):     {source_dir_name}")
     print(f"  Target Table (Param):   {target_table_name}")
     print(f"  Landing Volume Path:  {landing_volume_path}")
-    print(f"  Bronze Table Full Name: {bronze_table_full_name}")
+    print(f"  Bronze Table Full Name: {bronze_table_full_name}") # ⭐️ Sẽ in ra tên đúng
     print(f"  Checkpoint Path:      {checkpoint_path}")
     print("-------------------------")
     
