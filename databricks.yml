@@ -9,7 +9,7 @@ targets:
 resources:
   jobs:
     bronze_pipeline_job:
-      name: "[Bronze] Olist Pipeline"
+      name: "[Bronze-Silver] Olist Pipeline"
       
       environments:
         - environment_key: "Default"
