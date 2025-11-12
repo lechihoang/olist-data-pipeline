@@ -5,11 +5,12 @@
 # --------------------
 # ⚠️ CHẠY FILE NÀY TRÊN DATABRICKS JOB
 # --------------------
-# (Phiên bản đã SỬA LỖI: Dùng 'try_to_timestamp' để xử lý data "bẩn")
+# (Phiên bản đã SỬA LỖI: Dùng 'lit()' cho 'try_to_timestamp'
+#  để tương thích với Spark Connect / Serverless)
 
 import sys
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, try_to_timestamp # ⭐️ THAY ĐỔI: Dùng 'try_to_timestamp'
+from pyspark.sql.functions import col, try_to_timestamp, lit # ⭐️ THÊM 'lit' VÀO
 from delta.tables import DeltaTable
 # (Không cần import DBUtils)
 
@@ -23,7 +24,6 @@ def process_silver_order_reviews(spark: SparkSession, bronze_table_name: str, si
     bronze_df = spark.readStream.table(bronze_table_name)
     
     # Định dạng (format)
-    ts_format = "yyyy-MM-dd HH:mm:ss"
 
     # 2. Logic "Làm sạch" (Transform)
     silver_df = (bronze_df
@@ -34,11 +34,9 @@ def process_silver_order_reviews(spark: SparkSession, bronze_table_name: str, si
             col("review_comment_title").cast("string"),
             col("review_comment_message").cast("string"),
             
-            # ⭐️ SỬA LỖI: Dùng 'try_to_timestamp' (an toàn)
-            # Nếu gặp text bẩn, nó sẽ trả về NULL thay vì crash
-            # (Và đảm bảo CÓ dấu ngoặc kép)
-            try_to_timestamp(col("review_creation_date"), ts_format).alias("review_creation_date"),
-            try_to_timestamp(col("review_answer_timestamp"), ts_format).alias("review_answer_timestamp")
+            # ⭐️ SỬA LỖI CÚ PHÁP: Bọc 'ts_format' trong 'lit()'
+            try_to_timestamp(col("review_creation_date"), lit("yyyy-MM-dd HH:mm:ss")).alias("review_creation_date"),
+            try_to_timestamp(col("review_answer_timestamp"), lit("yyyy-MM-dd HH:mm:ss")).alias("review_answer_timestamp")
         )
         .where("review_id IS NOT NULL AND order_id IS NOT NULL")
     )
