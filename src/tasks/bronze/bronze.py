@@ -5,12 +5,11 @@
 # --------------------
 # ⚠️ CHẠY FILE NÀY TRÊN DATABRICKS JOB
 # --------------------
-# (Phiên bản "Sửa lỗi Path": Dùng 'os.path' để tìm đường dẫn tuyệt đối
-#  từ vị trí của file này)
+# (Phiên bản "Sửa lỗi Path": Dùng 'os.getcwd()' thay vì '__file__')
 
 import sys
 import json
-import os # ⭐️ THÊM IMPORT NÀY
+import os # ⭐️ IMPORT OS
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, current_timestamp
 from pyspark.dbutils import DBUtils
@@ -18,9 +17,6 @@ from pyspark.sql.types import StructType, StructField, StringType, IntegerType, 
 
 # --- HÀM HỖ TRỢ 1 (Giữ nguyên) ---
 def get_spark_type(type_name: str):
-    """
-    Chuyển đổi tên kiểu (string) từ JSON thành đối tượng Kiểu (Type) của Spark.
-    """
     type_map = {
         "string": StringType(),
         "integer": IntegerType(),
@@ -32,27 +28,18 @@ def get_spark_type(type_name: str):
 
 # --- HÀM HỖ TRỢ 2 (⭐️ ĐÃ SỬA LỖI PATH) ---
 def load_schema_from_json(table_name: str) -> StructType:
-    """
-    Đọc file schema (ví dụ: 'orders_raw.json') 
-    và biến nó thành một đối tượng StructType của Spark.
-    (Sử dụng 'os.path' để tìm đường dẫn một cách an toàn).
-    """
     
-    # 1. Lấy đường dẫn ĐẦY ĐỦ của file 'bronze.py' này
-    #    (ví dụ: /Workspace/Repos/user/repo/src/tasks/bronze/bronze.py)
-    current_file_abs_path = os.path.abspath(__file__)
+    # ⭐️ SỬA LỖI PATH: Dùng os.getcwd() (Current Working Directory)
     
-    # 2. Lấy thư mục 'src/' (là "cha" của "cha" của "cha" của file này)
-    #    dirname(current_file_abs_path) -> .../src/tasks/bronze
-    #    dirname(...) -> .../src/tasks
-    #    dirname(...) -> .../src
-    src_dir = os.path.dirname(os.path.dirname(os.path.dirname(current_file_abs_path)))
+    # 1. LẤY THƯ MỤC LÀM VIỆC HIỆN TẠI (CWD)
+    #    (Khi 'bundle deploy', đây sẽ là thư mục gốc của repo)
+    cwd = os.getcwd() 
     
-    # 3. "Đi xuống" thư mục 'schemas/'
+    # 2. XÂY DỰNG ĐƯỜNG DẪN TỪ CWD
     #    (ví dụ: /Workspace/Repos/user/repo/src/schemas/geolocation_raw.json)
-    schema_path = os.path.join(src_dir, "schemas", f"{table_name}.json")
+    schema_path = os.path.join(cwd, "src", "schemas", f"{table_name}.json")
     
-    print(f"  Đang đọc schema (tuyệt đối) từ: {schema_path}")
+    print(f"  Đang đọc schema (từ CWD) tại: {schema_path}")
     
     fields = []
     
@@ -110,6 +97,9 @@ if __name__ == "__main__":
     source_dir_name = dbutils.widgets.get("source_dir_name")
     target_table_name = dbutils.widgets.get("target_table_name")
     
+    # In ra CWD (theo yêu cầu của bạn) để kiểm tra
+    print(f"⭐️ DEBUG: Thư mục làm việc hiện tại (CWD) là: {os.getcwd()}")
+    
     loaded_schema = load_schema_from_json(target_table_name)
         
     CATALOG = "olist_project"
@@ -118,7 +108,7 @@ if __name__ == "__main__":
     LANDING_VOLUME = "landing_zone"
 
     landing_volume_path = f"/Volumes/{CATALOG}/{STAGING_SCHEMA}/{LANDING_VOLUME}/{source_dir_name}"
-    bronze_table_full_name = f"{CATALOG}.{BRONZE_SCHEMA}.{target_table_name}"
+    bronze_table_full_name = f"{CATALOG}/{BRONZE_SCHEMA}.{target_table_name}"
     checkpoint_path = f"/Volumes/{CATALOG}/{STAGING_SCHEMA}/checkpoints/{target_table_name}"
     
     print("--- Cấu hình Task ---")
