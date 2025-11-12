@@ -17,8 +17,8 @@ def get_spark_type(type_name: str):
     return type_map.get(type_name.lower(), StringType()) 
 
 def load_schema_from_json(table_name: str) -> StructType:
-    print(f"  Đang đọc schema từ: ../schemas/{table_name}.json")
-    schema_path = f"../schemas/{table_name}.json"
+    print(f"  Đang đọc schema từ: src/schemas/{table_name}.json")
+    schema_path = f"src/schemas/{table_name}.json"
     
     fields = []
     
