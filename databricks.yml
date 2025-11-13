@@ -200,3 +200,30 @@ resources:
               bronze_table_input: "order_reviews_raw"
               silver_table_output: "order_reviews"
           environment_key: "Default"
+# -----------------------------------------------
+        # --- TẦNG GOLD (TASK 18 MỚI) ---
+        # -----------------------------------------------
+        - task_key: run_dbt_gold_models
+          description: "Chạy dbt để xây dựng Tầng Gold (Analytics)"
+          
+          # ⭐️ Phụ thuộc vào TẤT CẢ các task Silver
+          depends_on:
+            - task_key: process_silver_geolocation
+            - task_key: process_silver_customers
+            - task_key: process_silver_products
+            - task_key: process_silver_sellers
+            - task_key: process_silver_orders
+            - task_key: process_silver_order_items
+            - task_key: process_silver_order_payments
+            - task_key: process_silver_order_reviews
+            
+          dbt_task:
+            commands:
+              - "dbt deps"
+              - "dbt build" # "build" = "run" + "test" + "snapshot"
+            
+            # Trỏ đến thư mục dbt trong repo của bạn
+            project_directory: "dbt_olist" 
+          
+          # Dùng chung "máy" (compute)
+          environment_key: "Default"

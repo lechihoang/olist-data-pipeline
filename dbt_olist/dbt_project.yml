@@ -1,6 +1,7 @@
 # Tên file: dbt_olist/dbt_project.yml
 # --------------------
 # PHIÊN BẢN "CHUẨN" ĐẦY ĐỦ
+# (Đã xóa '+schema: gold' dư thừa)
 # --------------------
 
 # Tên dự án (phải khớp với tên thư mục 'dbt_olist')
@@ -12,7 +13,7 @@ config-version: 2
 # (File này được 'dbt init' tự động tạo và đặt tên)
 profile: 'dbt_olist'
 
-# Đường dẫn nơi dbt sẽ tìm code SQL
+# Đường dẫn (Giữ nguyên)
 model-paths: ["models"]
 analysis-paths: ["analyses"]
 test-paths: ["tests"]
@@ -26,18 +27,37 @@ clean-targets:
 
 
 # ----------------------------------------------------
-# ⭐️ PHẦN CẤU HÌNH QUAN TRỌNG (ĐÃ SỬA) ⭐️
+# ⭐️ CẤU HÌNH CÁC THƯ MỤC MODEL ⭐️
 # ----------------------------------------------------
 models:
   # Tên dự án của bạn (phải khớp với 'name:' ở trên)
   dbt_olist:
-
-    # Cấu hình cho thư mục 'staging' (nơi chứa 'sources.yml')
+    
+    # "Tất cả các file trong 'staging/' (như sources.yml)
+    #  sẽ được 'materialized' (hiện thực hóa) thành 'view'"
     staging:
-      # Chúng ta không "hiện thực hóa" (materialize) bất cứ thứ gì ở đây
       +materialized: view 
-
-    # ⭐️ CẤU HÌNH CHO TẦNG GOLD (QUAN TRỌNG)
+      
+    # "Tất cả các file trong 'intermediate/' (như 'int_order_distances.sql')
+    #  sẽ là 'ephemeral' (phù du - không tạo bảng)"
+    intermediate:
+      +materialized: ephemeral
+      
+    # "Tất cả các file trong 'gold/' (dim_*, fct_*)
+    #  sẽ được 'materialized' (hiện thực hóa) thành 'table'"
     gold:
-      +materialized: table      # ⭐️ "Hãy tạo BẢNG (Table)"           # ⭐️ "Hãy ghi vào schema 'gold'"
-      +database: olist_project  # ⭐️ "Bên trong catalog 'olist_project'"
+      +materialized: table
+      # ⭐️ Chúng ta CHỈ cần chỉ định "Kho" (Database / Catalog)
+      +database: olist_project
+      # ⭐️ ĐÃ XÓA DÒNG '+schema: gold'
+      # (Vì 'dbt init' đã cài đặt 'gold' làm schema mặc định rồi)
+
+# ----------------------------------------------------
+# ⭐️ CẤU HÌNH CHO LỆNH 'dbt snapshot' ⭐️
+# ----------------------------------------------------
+# (Snapshot KHÔNG đọc config từ 'models:',
+#  nên chúng ta phải chỉ định "nơi ghi" (target) cho nó ở đây)
+snapshots:
+  dbt_olist: # (Phải khớp với 'name:')
+    +target_database: olist_project
+    +target_schema: gold
