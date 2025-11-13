@@ -5,12 +5,12 @@
 # --------------------
 # ⚠️ CHẠY FILE NÀY TRÊN DATABRICKS JOB
 # --------------------
-# (Phiên bản đã SỬA LỖI: Dùng 'lit()' cho 'try_to_timestamp'
-#  để tương thích với Spark Connect / Serverless)
+# (Phiên bản đã SỬA LỖI: Dùng 'try_to_timestamp' VÀ
+#  Khóa Composite (review_id + order_id) cho MERGE)
 
 import sys
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, try_to_timestamp, lit # ⭐️ THÊM 'lit' VÀO
+from pyspark.sql.functions import col, try_to_timestamp, lit
 from delta.tables import DeltaTable
 # (Không cần import DBUtils)
 
@@ -23,7 +23,7 @@ def process_silver_order_reviews(spark: SparkSession, bronze_table_name: str, si
 
     bronze_df = spark.readStream.table(bronze_table_name)
     
-    # Định dạng (format)
+    ts_format = "yyyy-MM-dd HH:mm:ss"
 
     # 2. Logic "Làm sạch" (Transform)
     silver_df = (bronze_df
@@ -33,10 +33,8 @@ def process_silver_order_reviews(spark: SparkSession, bronze_table_name: str, si
             col("review_score").cast("integer"),
             col("review_comment_title").cast("string"),
             col("review_comment_message").cast("string"),
-            
-            # ⭐️ SỬA LỖI CÚ PHÁP: Bọc 'ts_format' trong 'lit()'
-            try_to_timestamp(col("review_creation_date"), lit("yyyy-MM-dd HH:mm:ss")).alias("review_creation_date"),
-            try_to_timestamp(col("review_answer_timestamp"), lit("yyyy-MM-dd HH:mm:ss")).alias("review_answer_timestamp")
+            try_to_timestamp(col("review_creation_date"), lit(ts_format)).alias("review_creation_date"),
+            try_to_timestamp(col("review_answer_timestamp"), lit(ts_format)).alias("review_answer_timestamp")
         )
         .where("review_id IS NOT NULL AND order_id IS NOT NULL")
     )
@@ -52,10 +50,11 @@ def process_silver_order_reviews(spark: SparkSession, bronze_table_name: str, si
             
         silver_delta_table = DeltaTable.forName(spark, silver_table_name)
 
+        # ⭐️ SỬA LỖI (THEO Ý BẠN): Dùng Khóa Composite (2 cột)
         (silver_delta_table.alias("s") 
             .merge(
                 micro_batch_df.alias("b"),
-                "s.review_id = b.review_id"
+                "s.review_id = b.review_id AND s.order_id = b.order_id"
             )
             .whenMatchedUpdateAll()
             .whenNotMatchedInsertAll()

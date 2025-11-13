@@ -9,12 +9,15 @@ targets:
 resources:
   jobs:
     olist_pipeline_job: 
-      name: "[Bronze-Silver] Olist Pipeline" 
+      name: "[Bronze-Silver-Gold] Olist Pipeline" 
       
       environments:
         - environment_key: "Default"
           spec:
             environment_version: "4"
+            dependencies:
+                - "dbt-core==1.8.0"
+                - "dbt-databricks==1.8.0"
 
       queue:
         enabled: true
@@ -218,6 +221,9 @@ resources:
             - task_key: process_silver_order_reviews
             
           dbt_task:
+            catalog: olist_project
+            schema: gold
+            warehouse_id: "956f28a1a104215e"
             commands:
               - "dbt deps"
               - "dbt build" # "build" = "run" + "test" + "snapshot"
