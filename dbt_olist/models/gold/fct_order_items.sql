@@ -12,7 +12,7 @@
   
   {%- set max_loaded_timestamp_result = run_query(max_timestamp_query) -%}
   
-  {%- if execute and max_loaded_timestamp_result.rows -%}
+  {%- if execute and max_loaded_timestamp_result.rows[0][0] is not none -%}
     {%- set max_loaded_timestamp = max_loaded_timestamp_result.rows[0][0] -%}
   {%- else -%}
     {%- set max_loaded_timestamp = '1900-01-01 00:00:00' -%} 
@@ -30,7 +30,6 @@ orders AS (
           AND order_purchase_timestamp > '{{ max_loaded_timestamp }}'
         {% endif %}
 )
-
 SELECT
     it.order_id,
     it.order_item_id,
@@ -38,10 +37,6 @@ SELECT
     it.seller_id,
     ord.customer_id,
     CAST(ord.order_purchase_timestamp AS DATE) AS order_date,
-    
-    ord.order_delivered_customer_date,
-    ord.order_estimated_delivery_date,
-    
     it.price,
     it.freight_value
     

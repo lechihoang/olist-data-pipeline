@@ -19,7 +19,6 @@ WITH source AS (
         ) AS rn
     FROM {{ source('olist_silver', 'customers') }}
 )
-
 SELECT 
     customer_id,
     customer_unique_id,
@@ -29,6 +28,6 @@ SELECT
     geolocation_lat,
     geolocation_lng
 FROM source
-WHERE rn = 1 -- ⭐️ 2. Chỉ chọn dòng "mới nhất" (số 1)
+WHERE rn = 1
 
 {% endsnapshot %}

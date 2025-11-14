@@ -7,12 +7,12 @@
 
 {% if is_incremental() %}
   {%- set max_timestamp_query -%}
-    SELECT DATE_ADD(MAX(order_date), -3) FROM {{ this }} 
+    SELECT DATE_ADD(MAX(order_date), -3) FROM {{ this }}
   {%- endset -%}
   
   {%- set max_loaded_timestamp_result = run_query(max_timestamp_query) -%}
   
-  {%- if execute and max_loaded_timestamp_result.rows -%}
+  {%- if execute and max_loaded_timestamp_result.rows[0][0] is not none -%}
     {%- set max_loaded_timestamp = max_loaded_timestamp_result.rows[0][0] -%}
   {%- else -%}
     {%- set max_loaded_timestamp = '1900-01-01 00:00:00' -%} 
@@ -30,12 +30,11 @@ orders AS (
           AND order_purchase_timestamp > '{{ max_loaded_timestamp }}'
         {% endif %}
 )
-
 SELECT
     p.order_id,
     p.payment_sequential,
     o.customer_id,
-    CAST(o.order_purchase_timestamp AS DATE) AS order_date, 
+    CAST(o.order_purchase_timestamp AS DATE) AS order_date,
     p.payment_type,
     p.payment_installments,
     p.payment_value
