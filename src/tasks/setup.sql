@@ -11,7 +11,6 @@ CREATE SCHEMA IF NOT EXISTS silver
 CREATE SCHEMA IF NOT EXISTS staging
     COMMENT 'Nơi chứa các đối tượng tạm như Volumes, checkpoints';
 
--- 4. TẠO "KHU VỰC UPLOAD" (VOLUME)
 CREATE VOLUME IF NOT EXISTS staging.landing_zone
     COMMENT 'Nơi chứa file CSV thô từ Olist (vùng đệm an toàn)';
 

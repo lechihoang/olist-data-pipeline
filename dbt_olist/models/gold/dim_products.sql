@@ -1,4 +1,3 @@
--- Tên file: dbt_olist/models/gold/dim_products.sql
 SELECT
     product_id,
     product_category_name,

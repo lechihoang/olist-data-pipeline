@@ -1,4 +1,3 @@
--- Tên file: dbt_olist/models/gold/dim_datetimes.sql
 WITH all_dates AS (
     SELECT DISTINCT
         CAST(order_purchase_timestamp AS DATE) AS order_date

@@ -10,13 +10,9 @@
     )
 }}
 
--- ⭐️ SỬA LỖI: DỌN DẸP (DEDUPLICATE) NGUỒN TRƯỚC
--- Đảm bảo chúng ta chỉ trả về 1 dòng DUY NHẤT cho mỗi 'customer_unique_id'
 WITH source AS (
     SELECT 
         *,
-        -- 1. Đánh số (row_number) cho các đơn hàng của cùng 1 khách hàng,
-        --    lấy đơn hàng "mới nhất" (dựa trên 'customer_id') lên đầu (số 1)
         ROW_NUMBER() OVER (
             PARTITION BY customer_unique_id 
             ORDER BY customer_id DESC

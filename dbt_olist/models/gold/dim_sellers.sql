@@ -1,4 +1,3 @@
--- Tên file: dbt_olist/models/gold/dim_sellers.sql
 WITH sellers AS (
     SELECT * FROM {{ source('olist_silver', 'sellers') }}
 ),
@@ -10,7 +9,7 @@ SELECT
     s.seller_zip_code_prefix,
     s.seller_city,
     s.seller_state,
-    g.geolocation_lat, -- ⭐️ Làm giàu (enrich) tại đây
+    g.geolocation_lat,
     g.geolocation_lng
 FROM sellers AS s
 LEFT JOIN geolocation AS g

@@ -1,19 +1,9 @@
-# Tên file: dbt_olist/dbt_project.yml
-# --------------------
-# PHIÊN BẢN "CHUẨN" ĐẦY ĐỦ
-# (Đã xóa '+schema: gold' dư thừa)
-# --------------------
-
-# Tên dự án (phải khớp với tên thư mục 'dbt_olist')
 name: 'dbt_olist'
 version: '1.0.0'
 config-version: 2
 
-# Tên "profile" (cấu hình kết nối)
-# (File này được 'dbt init' tự động tạo và đặt tên)
 profile: 'dbt_olist'
 
-# Đường dẫn (Giữ nguyên)
 model-paths: ["models"]
 analysis-paths: ["analyses"]
 test-paths: ["tests"]
@@ -26,37 +16,19 @@ clean-targets:
   - "dbt_packages"
 
 
-# ----------------------------------------------------
-# ⭐️ CẤU HÌNH CÁC THƯ MỤC MODEL ⭐️
-# ----------------------------------------------------
 models:
-  # Tên dự án của bạn (phải khớp với 'name:' ở trên)
   dbt_olist:
-    
-    # "Tất cả các file trong 'staging/' (như sources.yml)
-    #  sẽ được 'materialized' (hiện thực hóa) thành 'view'"
     staging:
-      +materialized: view 
-      
-    # "Tất cả các file trong 'intermediate/' (như 'int_order_distances.sql')
-    #  sẽ là 'ephemeral' (phù du - không tạo bảng)"
+      +materialized: view
+    
     intermediate:
       +materialized: ephemeral
-      
-    # "Tất cả các file trong 'gold/' (dim_*, fct_*)
-    #  sẽ được 'materialized' (hiện thực hóa) thành 'table'"
+    
     gold:
       +materialized: table
-      # ⭐️ Chúng ta CHỈ cần chỉ định "Kho" (Database / Catalog)
       +database: olist_project
-      # ⭐️ ĐÃ XÓA DÒNG '+schema: gold'
-      # (Vì 'dbt init' đã cài đặt 'gold' làm schema mặc định rồi)
 
-# ----------------------------------------------------
-# ⭐️ CẤU HÌNH CHO LỆNH 'dbt snapshot' ⭐️
-# ----------------------------------------------------
-# (Snapshot KHÔNG đọc config từ 'models:',
-#  nên chúng ta phải chỉ định "nơi ghi" (target) cho nó ở đây)
+
 snapshots:
   dbt_olist: # (Phải khớp với 'name:')
     +target_database: olist_project

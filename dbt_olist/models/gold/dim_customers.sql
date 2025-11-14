@@ -1,5 +1,3 @@
--- Dimension table for Customers
--- Creates a table in gold layer with customer information
 
 SELECT
     customer_id,
