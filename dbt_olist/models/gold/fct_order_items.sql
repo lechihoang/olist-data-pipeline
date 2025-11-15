@@ -37,6 +37,8 @@ SELECT
     it.seller_id,
     ord.customer_id,
     CAST(ord.order_purchase_timestamp AS DATE) AS order_date,
+    ord.order_delivered_customer_date,
+    ord.order_estimated_delivery_date,
     it.price,
     it.freight_value
     
