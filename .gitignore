@@ -31,3 +31,6 @@ __pycache__/
 .idea/
 *.DS_Store
 token.txt
+
+# 6. Kiro specs (local development)
+.kiro/
