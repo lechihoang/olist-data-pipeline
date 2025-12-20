@@ -24,9 +24,9 @@ resources:
 
       tasks:
         # -----------------------------------------------
-        # --- TẦNG BRONZE - RUN (9 TASKS) ---
+        # --- run_bronze (9 TASKS) ---
         # -----------------------------------------------
-        - task_key: load_bronze_orders
+        - task_key: run_bronze_orders
           description: "Nạp file 'orders' từ Volume vào bảng bronze.orders_raw"
           notebook_task:
             notebook_path: src/tasks/bronze/bronze.py
@@ -35,7 +35,7 @@ resources:
               target_table_name: "orders_raw"
           environment_key: "Default"
 
-        - task_key: load_bronze_customers
+        - task_key: run_bronze_customers
           description: "Nạp file 'customers' vào bảng bronze.customers_raw"
           notebook_task:
             notebook_path: src/tasks/bronze/bronze.py
@@ -44,7 +44,7 @@ resources:
               target_table_name: "customers_raw"
           environment_key: "Default"
 
-        - task_key: load_bronze_order_items
+        - task_key: run_bronze_order_items
           description: "Nạp file 'order_items' vào bảng bronze.order_items_raw"
           notebook_task:
             notebook_path: src/tasks/bronze/bronze.py
@@ -53,7 +53,7 @@ resources:
               target_table_name: "order_items_raw"
           environment_key: "Default"
 
-        - task_key: load_bronze_order_payments
+        - task_key: run_bronze_order_payments
           description: "Nạp file 'order_payments' vào bảng bronze.order_payments_raw"
           notebook_task:
             notebook_path: src/tasks/bronze/bronze.py
@@ -62,7 +62,7 @@ resources:
               target_table_name: "order_payments_raw"
           environment_key: "Default"
 
-        - task_key: load_bronze_products
+        - task_key: run_bronze_products
           description: "Nạp file 'products' vào bảng bronze.products_raw"
           notebook_task:
             notebook_path: src/tasks/bronze/bronze.py
@@ -71,7 +71,7 @@ resources:
               target_table_name: "products_raw"
           environment_key: "Default"
 
-        - task_key: load_bronze_sellers
+        - task_key: run_bronze_sellers
           description: "Nạp file 'sellers' vào bảng bronze.sellers_raw"
           notebook_task:
             notebook_path: src/tasks/bronze/bronze.py
@@ -80,7 +80,7 @@ resources:
               target_table_name: "sellers_raw"
           environment_key: "Default"
 
-        - task_key: load_bronze_geolocation
+        - task_key: run_bronze_geolocation
           description: "Nạp file 'geolocation' vào bảng bronze.geolocation_raw"
           notebook_task:
             notebook_path: src/tasks/bronze/bronze.py
@@ -89,7 +89,7 @@ resources:
               target_table_name: "geolocation_raw"
           environment_key: "Default"
 
-        - task_key: load_bronze_order_reviews
+        - task_key: run_bronze_order_reviews
           description: "Nạp file 'order_reviews' vào bảng bronze.order_reviews_raw"
           notebook_task:
             notebook_path: src/tasks/bronze/bronze.py
@@ -98,7 +98,7 @@ resources:
               target_table_name: "order_reviews_raw"
           environment_key: "Default"
 
-        - task_key: load_bronze_product_translation
+        - task_key: run_bronze_product_translation
           description: "Nạp file 'product_category_name_translation'..."
           notebook_task:
             notebook_path: src/tasks/bronze/bronze.py
@@ -108,12 +108,12 @@ resources:
           environment_key: "Default"
 
         # -----------------------------------------------
-        # --- TẦNG BRONZE - TEST (9 TESTS) ---
+        # --- test_bronze (9 TESTS) ---
         # -----------------------------------------------
         - task_key: test_bronze_orders
           description: "Test data quality cho bronze.orders_raw"
           depends_on:
-            - task_key: load_bronze_orders
+            - task_key: run_bronze_orders
           notebook_task:
             notebook_path: src/tasks/tests/bronze/test_bronze_orders.py
           environment_key: "Default"
@@ -121,7 +121,7 @@ resources:
         - task_key: test_bronze_customers
           description: "Test data quality cho bronze.customers_raw"
           depends_on:
-            - task_key: load_bronze_customers
+            - task_key: run_bronze_customers
           notebook_task:
             notebook_path: src/tasks/tests/bronze/test_bronze_customers.py
           environment_key: "Default"
@@ -129,7 +129,7 @@ resources:
         - task_key: test_bronze_order_items
           description: "Test data quality cho bronze.order_items_raw"
           depends_on:
-            - task_key: load_bronze_order_items
+            - task_key: run_bronze_order_items
           notebook_task:
             notebook_path: src/tasks/tests/bronze/test_bronze_order_items.py
           environment_key: "Default"
@@ -137,7 +137,7 @@ resources:
         - task_key: test_bronze_order_payments
           description: "Test data quality cho bronze.order_payments_raw"
           depends_on:
-            - task_key: load_bronze_order_payments
+            - task_key: run_bronze_order_payments
           notebook_task:
             notebook_path: src/tasks/tests/bronze/test_bronze_order_payments.py
           environment_key: "Default"
@@ -145,7 +145,7 @@ resources:
         - task_key: test_bronze_products
           description: "Test data quality cho bronze.products_raw"
           depends_on:
-            - task_key: load_bronze_products
+            - task_key: run_bronze_products
           notebook_task:
             notebook_path: src/tasks/tests/bronze/test_bronze_products.py
           environment_key: "Default"
@@ -153,7 +153,7 @@ resources:
         - task_key: test_bronze_sellers
           description: "Test data quality cho bronze.sellers_raw"
           depends_on:
-            - task_key: load_bronze_sellers
+            - task_key: run_bronze_sellers
           notebook_task:
             notebook_path: src/tasks/tests/bronze/test_bronze_sellers.py
           environment_key: "Default"
@@ -161,7 +161,7 @@ resources:
         - task_key: test_bronze_geolocation
           description: "Test data quality cho bronze.geolocation_raw"
           depends_on:
-            - task_key: load_bronze_geolocation
+            - task_key: run_bronze_geolocation
           notebook_task:
             notebook_path: src/tasks/tests/bronze/test_bronze_geolocation.py
           environment_key: "Default"
@@ -169,7 +169,7 @@ resources:
         - task_key: test_bronze_order_reviews
           description: "Test data quality cho bronze.order_reviews_raw"
           depends_on:
-            - task_key: load_bronze_order_reviews
+            - task_key: run_bronze_order_reviews
           notebook_task:
             notebook_path: src/tasks/tests/bronze/test_bronze_order_reviews.py
           environment_key: "Default"
@@ -177,16 +177,15 @@ resources:
         - task_key: test_bronze_product_translation
           description: "Test data quality cho bronze.product_category_name_translation_raw"
           depends_on:
-            - task_key: load_bronze_product_translation
+            - task_key: run_bronze_product_translation
           notebook_task:
             notebook_path: src/tasks/tests/bronze/test_bronze_product_translation.py
           environment_key: "Default"
 
         # -----------------------------------------------
-        # --- TẦNG SILVER - RUN (8 TASKS) ---
-        # Silver tasks now depend on Bronze tests instead of Bronze loads
+        # --- run_silver (8 TASKS) ---
         # -----------------------------------------------
-        - task_key: process_silver_geolocation
+        - task_key: run_silver_geolocation
           description: "Dọn dẹp (Dedupe) và GHI ĐÈ bảng Geolocation"
           depends_on: 
             - task_key: test_bronze_geolocation
@@ -197,11 +196,11 @@ resources:
               silver_table_output: "geolocation"
           environment_key: "Default"
           
-        - task_key: process_silver_customers
+        - task_key: run_silver_customers
           description: "Làm sạch, Làm giàu (JOIN Geo), và MERGE bảng Customers"
           depends_on: 
             - task_key: test_bronze_customers
-            - task_key: process_silver_geolocation
+            - task_key: run_silver_geolocation
           notebook_task:
             notebook_path: src/tasks/silver/silver_customers.py
             base_parameters:
@@ -210,7 +209,7 @@ resources:
               silver_table_output: "customers"
           environment_key: "Default"
 
-        - task_key: process_silver_products
+        - task_key: run_silver_products
           description: "Làm sạch, Dịch, và MERGE bảng Products"
           depends_on: 
             - task_key: test_bronze_products
@@ -223,7 +222,7 @@ resources:
               silver_products_table_output: "products"
           environment_key: "Default"
 
-        - task_key: process_silver_sellers
+        - task_key: run_silver_sellers
           description: "Làm sạch và MERGE bảng Sellers"
           depends_on: 
             - task_key: test_bronze_sellers
@@ -234,7 +233,7 @@ resources:
               silver_table_output: "sellers"
           environment_key: "Default"
 
-        - task_key: process_silver_orders
+        - task_key: run_silver_orders
           description: "Làm sạch và MERGE bảng Orders (cập nhật status)"
           depends_on: 
             - task_key: test_bronze_orders
@@ -245,7 +244,7 @@ resources:
               silver_table_output: "orders"
           environment_key: "Default"
 
-        - task_key: process_silver_order_items
+        - task_key: run_silver_order_items
           description: "Làm sạch và MERGE bảng Order Items"
           depends_on: 
             - task_key: test_bronze_order_items
@@ -256,7 +255,7 @@ resources:
               silver_table_output: "order_items"
           environment_key: "Default"
 
-        - task_key: process_silver_order_payments
+        - task_key: run_silver_order_payments
           description: "Làm sạch và MERGE bảng Order Payments"
           depends_on: 
             - task_key: test_bronze_order_payments
@@ -267,7 +266,7 @@ resources:
               silver_table_output: "order_payments"
           environment_key: "Default"
 
-        - task_key: process_silver_order_reviews
+        - task_key: run_silver_order_reviews
           description: "Làm sạch và MERGE bảng Order Reviews"
           depends_on: 
             - task_key: test_bronze_order_reviews
@@ -279,12 +278,12 @@ resources:
           environment_key: "Default"
 
         # -----------------------------------------------
-        # --- TẦNG SILVER - TEST (8 TESTS) ---
+        # --- test_silver (8 TESTS) ---
         # -----------------------------------------------
         - task_key: test_silver_geolocation
           description: "Test data quality cho silver.geolocation"
           depends_on:
-            - task_key: process_silver_geolocation
+            - task_key: run_silver_geolocation
           notebook_task:
             notebook_path: src/tasks/tests/silver/test_silver_geolocation.py
           environment_key: "Default"
@@ -292,7 +291,7 @@ resources:
         - task_key: test_silver_customers
           description: "Test data quality cho silver.customers"
           depends_on:
-            - task_key: process_silver_customers
+            - task_key: run_silver_customers
           notebook_task:
             notebook_path: src/tasks/tests/silver/test_silver_customers.py
           environment_key: "Default"
@@ -300,7 +299,7 @@ resources:
         - task_key: test_silver_products
           description: "Test data quality cho silver.products"
           depends_on:
-            - task_key: process_silver_products
+            - task_key: run_silver_products
           notebook_task:
             notebook_path: src/tasks/tests/silver/test_silver_products.py
           environment_key: "Default"
@@ -308,7 +307,7 @@ resources:
         - task_key: test_silver_sellers
           description: "Test data quality cho silver.sellers"
           depends_on:
-            - task_key: process_silver_sellers
+            - task_key: run_silver_sellers
           notebook_task:
             notebook_path: src/tasks/tests/silver/test_silver_sellers.py
           environment_key: "Default"
@@ -316,7 +315,7 @@ resources:
         - task_key: test_silver_orders
           description: "Test data quality cho silver.orders"
           depends_on:
-            - task_key: process_silver_orders
+            - task_key: run_silver_orders
           notebook_task:
             notebook_path: src/tasks/tests/silver/test_silver_orders.py
           environment_key: "Default"
@@ -324,7 +323,7 @@ resources:
         - task_key: test_silver_order_items
           description: "Test data quality cho silver.order_items"
           depends_on:
-            - task_key: process_silver_order_items
+            - task_key: run_silver_order_items
           notebook_task:
             notebook_path: src/tasks/tests/silver/test_silver_order_items.py
           environment_key: "Default"
@@ -332,7 +331,7 @@ resources:
         - task_key: test_silver_order_payments
           description: "Test data quality cho silver.order_payments"
           depends_on:
-            - task_key: process_silver_order_payments
+            - task_key: run_silver_order_payments
           notebook_task:
             notebook_path: src/tasks/tests/silver/test_silver_order_payments.py
           environment_key: "Default"
@@ -340,14 +339,13 @@ resources:
         - task_key: test_silver_order_reviews
           description: "Test data quality cho silver.order_reviews"
           depends_on:
-            - task_key: process_silver_order_reviews
+            - task_key: run_silver_order_reviews
           notebook_task:
             notebook_path: src/tasks/tests/silver/test_silver_order_reviews.py
           environment_key: "Default"
 
         # -----------------------------------------------
-        # --- TẦNG GOLD - DIMENSIONS (4 TASKS) ---
-        # Dims depend on Silver tests
+        # --- run_gold_dim (4 TASKS) ---
         # -----------------------------------------------
         - task_key: run_gold_dim_customers
           description: "Chạy dbt model dim_customers"
@@ -408,8 +406,7 @@ resources:
           environment_key: "Default"
 
         # -----------------------------------------------
-        # --- TẦNG GOLD - FACTS (3 TASKS) ---
-        # Facts depend on Dims
+        # --- run_gold_fct (3 TASKS) ---
         # -----------------------------------------------
         - task_key: run_gold_fct_order_items
           description: "Chạy dbt model fct_order_items"
