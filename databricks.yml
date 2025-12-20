@@ -24,12 +24,12 @@ resources:
 
       tasks:
         # -----------------------------------------------
-        # --- TẦNG BRONZE (9 TASKS - GIỮ NGUYÊN) ---
+        # --- TẦNG BRONZE - RUN (9 TASKS) ---
         # -----------------------------------------------
         - task_key: load_bronze_orders
           description: "Nạp file 'orders' từ Volume vào bảng bronze.orders_raw"
           notebook_task:
-            notebook_path: src/tasks/bronze/bronze.py # ⭐️ Dùng đường dẫn tương đối
+            notebook_path: src/tasks/bronze/bronze.py
             base_parameters:
               source_dir_name: "orders"
               target_table_name: "orders_raw"
@@ -108,14 +108,88 @@ resources:
           environment_key: "Default"
 
         # -----------------------------------------------
-        # --- TẦNG SILVER (8 TASKS MỚI) ---
+        # --- TẦNG BRONZE - TEST (9 TESTS) ---
         # -----------------------------------------------
+        - task_key: test_bronze_orders
+          description: "Test data quality cho bronze.orders_raw"
+          depends_on:
+            - task_key: load_bronze_orders
+          notebook_task:
+            notebook_path: src/tasks/tests/bronze/test_bronze_orders.py
+          environment_key: "Default"
 
+        - task_key: test_bronze_customers
+          description: "Test data quality cho bronze.customers_raw"
+          depends_on:
+            - task_key: load_bronze_customers
+          notebook_task:
+            notebook_path: src/tasks/tests/bronze/test_bronze_customers.py
+          environment_key: "Default"
+
+        - task_key: test_bronze_order_items
+          description: "Test data quality cho bronze.order_items_raw"
+          depends_on:
+            - task_key: load_bronze_order_items
+          notebook_task:
+            notebook_path: src/tasks/tests/bronze/test_bronze_order_items.py
+          environment_key: "Default"
+
+        - task_key: test_bronze_order_payments
+          description: "Test data quality cho bronze.order_payments_raw"
+          depends_on:
+            - task_key: load_bronze_order_payments
+          notebook_task:
+            notebook_path: src/tasks/tests/bronze/test_bronze_order_payments.py
+          environment_key: "Default"
+
+        - task_key: test_bronze_products
+          description: "Test data quality cho bronze.products_raw"
+          depends_on:
+            - task_key: load_bronze_products
+          notebook_task:
+            notebook_path: src/tasks/tests/bronze/test_bronze_products.py
+          environment_key: "Default"
+
+        - task_key: test_bronze_sellers
+          description: "Test data quality cho bronze.sellers_raw"
+          depends_on:
+            - task_key: load_bronze_sellers
+          notebook_task:
+            notebook_path: src/tasks/tests/bronze/test_bronze_sellers.py
+          environment_key: "Default"
+
+        - task_key: test_bronze_geolocation
+          description: "Test data quality cho bronze.geolocation_raw"
+          depends_on:
+            - task_key: load_bronze_geolocation
+          notebook_task:
+            notebook_path: src/tasks/tests/bronze/test_bronze_geolocation.py
+          environment_key: "Default"
+
+        - task_key: test_bronze_order_reviews
+          description: "Test data quality cho bronze.order_reviews_raw"
+          depends_on:
+            - task_key: load_bronze_order_reviews
+          notebook_task:
+            notebook_path: src/tasks/tests/bronze/test_bronze_order_reviews.py
+          environment_key: "Default"
+
+        - task_key: test_bronze_product_translation
+          description: "Test data quality cho bronze.product_category_name_translation_raw"
+          depends_on:
+            - task_key: load_bronze_product_translation
+          notebook_task:
+            notebook_path: src/tasks/tests/bronze/test_bronze_product_translation.py
+          environment_key: "Default"
+
+        # -----------------------------------------------
+        # --- TẦNG SILVER - RUN (8 TASKS) ---
+        # Silver tasks now depend on Bronze tests instead of Bronze loads
+        # -----------------------------------------------
         - task_key: process_silver_geolocation
           description: "Dọn dẹp (Dedupe) và GHI ĐÈ bảng Geolocation"
-          # ⭐️ Cú pháp 'depends_on' chuẩn
           depends_on: 
-            - task_key: load_bronze_geolocation 
+            - task_key: test_bronze_geolocation
           notebook_task:
             notebook_path: src/tasks/silver/silver_geolocation.py
             base_parameters:
@@ -126,7 +200,7 @@ resources:
         - task_key: process_silver_customers
           description: "Làm sạch, Làm giàu (JOIN Geo), và MERGE bảng Customers"
           depends_on: 
-            - task_key: load_bronze_customers
+            - task_key: test_bronze_customers
             - task_key: process_silver_geolocation
           notebook_task:
             notebook_path: src/tasks/silver/silver_customers.py
@@ -139,8 +213,8 @@ resources:
         - task_key: process_silver_products
           description: "Làm sạch, Dịch, và MERGE bảng Products"
           depends_on: 
-            - task_key: load_bronze_products
-            - task_key: load_bronze_product_translation
+            - task_key: test_bronze_products
+            - task_key: test_bronze_product_translation
           notebook_task:
             notebook_path: src/tasks/silver/silver_products.py
             base_parameters:
@@ -152,7 +226,7 @@ resources:
         - task_key: process_silver_sellers
           description: "Làm sạch và MERGE bảng Sellers"
           depends_on: 
-            - task_key: load_bronze_sellers
+            - task_key: test_bronze_sellers
           notebook_task:
             notebook_path: src/tasks/silver/silver_sellers.py
             base_parameters:
@@ -163,7 +237,7 @@ resources:
         - task_key: process_silver_orders
           description: "Làm sạch và MERGE bảng Orders (cập nhật status)"
           depends_on: 
-            - task_key: load_bronze_orders
+            - task_key: test_bronze_orders
           notebook_task:
             notebook_path: src/tasks/silver/silver_orders.py
             base_parameters:
@@ -174,7 +248,7 @@ resources:
         - task_key: process_silver_order_items
           description: "Làm sạch và MERGE bảng Order Items"
           depends_on: 
-            - task_key: load_bronze_order_items
+            - task_key: test_bronze_order_items
           notebook_task:
             notebook_path: src/tasks/silver/silver_order_items.py
             base_parameters:
@@ -185,7 +259,7 @@ resources:
         - task_key: process_silver_order_payments
           description: "Làm sạch và MERGE bảng Order Payments"
           depends_on: 
-            - task_key: load_bronze_order_payments
+            - task_key: test_bronze_order_payments
           notebook_task:
             notebook_path: src/tasks/silver/silver_order_payments.py
             base_parameters:
@@ -196,40 +270,197 @@ resources:
         - task_key: process_silver_order_reviews
           description: "Làm sạch và MERGE bảng Order Reviews"
           depends_on: 
-            - task_key: load_bronze_order_reviews
+            - task_key: test_bronze_order_reviews
           notebook_task:
             notebook_path: src/tasks/silver/silver_order_reviews.py
             base_parameters:
               bronze_table_input: "order_reviews_raw"
               silver_table_output: "order_reviews"
           environment_key: "Default"
-# -----------------------------------------------
-        # --- TẦNG GOLD (TASK 18 MỚI) ---
+
         # -----------------------------------------------
-        - task_key: run_dbt_gold_models
-          description: "Chạy dbt để xây dựng Tầng Gold (Analytics)"
-          
-          # ⭐️ Phụ thuộc vào TẤT CẢ các task Silver
+        # --- TẦNG SILVER - TEST (8 TESTS) ---
+        # -----------------------------------------------
+        - task_key: test_silver_geolocation
+          description: "Test data quality cho silver.geolocation"
           depends_on:
             - task_key: process_silver_geolocation
+          notebook_task:
+            notebook_path: src/tasks/tests/silver/test_silver_geolocation.py
+          environment_key: "Default"
+
+        - task_key: test_silver_customers
+          description: "Test data quality cho silver.customers"
+          depends_on:
             - task_key: process_silver_customers
+          notebook_task:
+            notebook_path: src/tasks/tests/silver/test_silver_customers.py
+          environment_key: "Default"
+
+        - task_key: test_silver_products
+          description: "Test data quality cho silver.products"
+          depends_on:
             - task_key: process_silver_products
+          notebook_task:
+            notebook_path: src/tasks/tests/silver/test_silver_products.py
+          environment_key: "Default"
+
+        - task_key: test_silver_sellers
+          description: "Test data quality cho silver.sellers"
+          depends_on:
             - task_key: process_silver_sellers
+          notebook_task:
+            notebook_path: src/tasks/tests/silver/test_silver_sellers.py
+          environment_key: "Default"
+
+        - task_key: test_silver_orders
+          description: "Test data quality cho silver.orders"
+          depends_on:
             - task_key: process_silver_orders
+          notebook_task:
+            notebook_path: src/tasks/tests/silver/test_silver_orders.py
+          environment_key: "Default"
+
+        - task_key: test_silver_order_items
+          description: "Test data quality cho silver.order_items"
+          depends_on:
             - task_key: process_silver_order_items
+          notebook_task:
+            notebook_path: src/tasks/tests/silver/test_silver_order_items.py
+          environment_key: "Default"
+
+        - task_key: test_silver_order_payments
+          description: "Test data quality cho silver.order_payments"
+          depends_on:
             - task_key: process_silver_order_payments
+          notebook_task:
+            notebook_path: src/tasks/tests/silver/test_silver_order_payments.py
+          environment_key: "Default"
+
+        - task_key: test_silver_order_reviews
+          description: "Test data quality cho silver.order_reviews"
+          depends_on:
             - task_key: process_silver_order_reviews
-            
+          notebook_task:
+            notebook_path: src/tasks/tests/silver/test_silver_order_reviews.py
+          environment_key: "Default"
+
+        # -----------------------------------------------
+        # --- TẦNG GOLD - DIMENSIONS (4 TASKS) ---
+        # Dims depend on Silver tests
+        # -----------------------------------------------
+        - task_key: run_gold_dim_customers
+          description: "Chạy dbt model dim_customers"
+          depends_on:
+            - task_key: test_silver_customers
+            - task_key: test_silver_geolocation
           dbt_task:
             catalog: olist_project
             schema: gold
             warehouse_id: "956f28a1a104215e"
             commands:
               - "dbt deps"
-              - "dbt build" # "build" = "run" + "test" + "snapshot"
-            
-            # Trỏ đến thư mục dbt trong repo của bạn
-            project_directory: "dbt_olist" 
-          
-          # Dùng chung "máy" (compute)
+              - "dbt run --select dim_customers"
+            project_directory: "dbt_olist"
+          environment_key: "Default"
+
+        - task_key: run_gold_dim_products
+          description: "Chạy dbt model dim_products"
+          depends_on:
+            - task_key: test_silver_products
+          dbt_task:
+            catalog: olist_project
+            schema: gold
+            warehouse_id: "956f28a1a104215e"
+            commands:
+              - "dbt deps"
+              - "dbt run --select dim_products"
+            project_directory: "dbt_olist"
+          environment_key: "Default"
+
+        - task_key: run_gold_dim_sellers
+          description: "Chạy dbt model dim_sellers"
+          depends_on:
+            - task_key: test_silver_sellers
+            - task_key: test_silver_geolocation
+          dbt_task:
+            catalog: olist_project
+            schema: gold
+            warehouse_id: "956f28a1a104215e"
+            commands:
+              - "dbt deps"
+              - "dbt run --select dim_sellers"
+            project_directory: "dbt_olist"
+          environment_key: "Default"
+
+        - task_key: run_gold_dim_datetimes
+          description: "Chạy dbt model dim_datetimes"
+          depends_on:
+            - task_key: test_silver_orders
+          dbt_task:
+            catalog: olist_project
+            schema: gold
+            warehouse_id: "956f28a1a104215e"
+            commands:
+              - "dbt deps"
+              - "dbt run --select dim_datetimes"
+            project_directory: "dbt_olist"
+          environment_key: "Default"
+
+        # -----------------------------------------------
+        # --- TẦNG GOLD - FACTS (3 TASKS) ---
+        # Facts depend on Dims
+        # -----------------------------------------------
+        - task_key: run_gold_fct_order_items
+          description: "Chạy dbt model fct_order_items"
+          depends_on:
+            - task_key: run_gold_dim_customers
+            - task_key: run_gold_dim_products
+            - task_key: run_gold_dim_sellers
+            - task_key: run_gold_dim_datetimes
+            - task_key: test_silver_order_items
+            - task_key: test_silver_orders
+          dbt_task:
+            catalog: olist_project
+            schema: gold
+            warehouse_id: "956f28a1a104215e"
+            commands:
+              - "dbt deps"
+              - "dbt run --select fct_order_items"
+            project_directory: "dbt_olist"
+          environment_key: "Default"
+
+        - task_key: run_gold_fct_order_payments
+          description: "Chạy dbt model fct_order_payments"
+          depends_on:
+            - task_key: run_gold_dim_customers
+            - task_key: run_gold_dim_datetimes
+            - task_key: test_silver_order_payments
+            - task_key: test_silver_orders
+          dbt_task:
+            catalog: olist_project
+            schema: gold
+            warehouse_id: "956f28a1a104215e"
+            commands:
+              - "dbt deps"
+              - "dbt run --select fct_order_payments"
+            project_directory: "dbt_olist"
+          environment_key: "Default"
+
+        - task_key: run_gold_fct_order_reviews
+          description: "Chạy dbt model fct_order_reviews"
+          depends_on:
+            - task_key: run_gold_dim_customers
+            - task_key: run_gold_dim_products
+            - task_key: run_gold_dim_datetimes
+            - task_key: test_silver_order_reviews
+            - task_key: test_silver_orders
+          dbt_task:
+            catalog: olist_project
+            schema: gold
+            warehouse_id: "956f28a1a104215e"
+            commands:
+              - "dbt deps"
+              - "dbt run --select fct_order_reviews"
+            project_directory: "dbt_olist"
           environment_key: "Default"
