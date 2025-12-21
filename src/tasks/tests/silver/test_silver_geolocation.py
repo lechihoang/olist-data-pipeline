@@ -2,8 +2,13 @@
 # Test Silver Geolocation - Validates data quality for silver geolocation table
 # Requirements: 2.7 - Verify geolocation_zip_code_prefix UNIQUE after deduplication
 
+import os
+from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
+
+# Load .env file from root folder
+load_dotenv()
 
 def run_tests(spark: SparkSession, table_name: str) -> list:
     """Run data quality tests for silver geolocation table"""
@@ -35,9 +40,11 @@ def run_tests(spark: SparkSession, table_name: str) -> list:
 if __name__ == "__main__":
     spark = SparkSession.builder.getOrCreate()
     
-    CATALOG = "olist_project"
-    SILVER_SCHEMA = "silver"
+    CATALOG = os.getenv("CATALOG", "olist_project")
+    SILVER_SCHEMA = os.getenv("SILVER_SCHEMA", "silver")
     TABLE_NAME = "geolocation"
+    
+    print(f"Config loaded: catalog={CATALOG}, silver={SILVER_SCHEMA}")
     
     full_table_name = f"{CATALOG}.{SILVER_SCHEMA}.{TABLE_NAME}"
     

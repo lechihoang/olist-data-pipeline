@@ -1,6 +1,17 @@
 bundle:
   name: olist-data-pipeline
 
+variables:
+  catalog:
+    description: "Unity Catalog name"
+    default: olist_project
+  warehouse_id:
+    description: "SQL Warehouse ID for dbt tasks"
+    default: "956f28a1a104215e"
+  gold_schema:
+    description: "Gold layer schema name"
+    default: gold
+
 targets:
   default:
     mode: development
@@ -33,6 +44,7 @@ resources:
             base_parameters:
               source_dir_name: "orders"
               target_table_name: "orders_raw"
+              schema_base_path: "/Workspace/${workspace.file_path}/src/schemas"
           environment_key: "Default"
 
         - task_key: run_bronze_customers
@@ -42,6 +54,7 @@ resources:
             base_parameters:
               source_dir_name: "customers"
               target_table_name: "customers_raw"
+              schema_base_path: "/Workspace/${workspace.file_path}/src/schemas"
           environment_key: "Default"
 
         - task_key: run_bronze_order_items
@@ -51,6 +64,7 @@ resources:
             base_parameters:
               source_dir_name: "order_items"
               target_table_name: "order_items_raw"
+              schema_base_path: "/Workspace/${workspace.file_path}/src/schemas"
           environment_key: "Default"
 
         - task_key: run_bronze_order_payments
@@ -60,6 +74,7 @@ resources:
             base_parameters:
               source_dir_name: "order_payments"
               target_table_name: "order_payments_raw"
+              schema_base_path: "/Workspace/${workspace.file_path}/src/schemas"
           environment_key: "Default"
 
         - task_key: run_bronze_products
@@ -69,6 +84,7 @@ resources:
             base_parameters:
               source_dir_name: "products"
               target_table_name: "products_raw"
+              schema_base_path: "/Workspace/${workspace.file_path}/src/schemas"
           environment_key: "Default"
 
         - task_key: run_bronze_sellers
@@ -78,6 +94,7 @@ resources:
             base_parameters:
               source_dir_name: "sellers"
               target_table_name: "sellers_raw"
+              schema_base_path: "/Workspace/${workspace.file_path}/src/schemas"
           environment_key: "Default"
 
         - task_key: run_bronze_geolocation
@@ -87,6 +104,7 @@ resources:
             base_parameters:
               source_dir_name: "geolocation"
               target_table_name: "geolocation_raw"
+              schema_base_path: "/Workspace/${workspace.file_path}/src/schemas"
           environment_key: "Default"
 
         - task_key: run_bronze_order_reviews
@@ -96,6 +114,7 @@ resources:
             base_parameters:
               source_dir_name: "order_reviews"
               target_table_name: "order_reviews_raw"
+              schema_base_path: "/Workspace/${workspace.file_path}/src/schemas"
           environment_key: "Default"
 
         - task_key: run_bronze_product_translation
@@ -105,6 +124,7 @@ resources:
             base_parameters:
               source_dir_name: "product_category_name_translation"
               target_table_name: "product_category_name_translation_raw"
+              schema_base_path: "/Workspace/${workspace.file_path}/src/schemas"
           environment_key: "Default"
 
         # -----------------------------------------------
@@ -353,9 +373,9 @@ resources:
             - task_key: test_silver_customers
             - task_key: test_silver_geolocation
           dbt_task:
-            catalog: olist_project
-            schema: gold
-            warehouse_id: "956f28a1a104215e"
+            catalog: ${var.catalog}
+            schema: ${var.gold_schema}
+            warehouse_id: ${var.warehouse_id}
             commands:
               - "dbt deps"
               - "dbt run --select dim_customers"
@@ -367,9 +387,9 @@ resources:
           depends_on:
             - task_key: test_silver_products
           dbt_task:
-            catalog: olist_project
-            schema: gold
-            warehouse_id: "956f28a1a104215e"
+            catalog: ${var.catalog}
+            schema: ${var.gold_schema}
+            warehouse_id: ${var.warehouse_id}
             commands:
               - "dbt deps"
               - "dbt run --select dim_products"
@@ -382,9 +402,9 @@ resources:
             - task_key: test_silver_sellers
             - task_key: test_silver_geolocation
           dbt_task:
-            catalog: olist_project
-            schema: gold
-            warehouse_id: "956f28a1a104215e"
+            catalog: ${var.catalog}
+            schema: ${var.gold_schema}
+            warehouse_id: ${var.warehouse_id}
             commands:
               - "dbt deps"
               - "dbt run --select dim_sellers"
@@ -396,12 +416,67 @@ resources:
           depends_on:
             - task_key: test_silver_orders
           dbt_task:
-            catalog: olist_project
-            schema: gold
-            warehouse_id: "956f28a1a104215e"
+            catalog: ${var.catalog}
+            schema: ${var.gold_schema}
+            warehouse_id: ${var.warehouse_id}
             commands:
               - "dbt deps"
               - "dbt run --select dim_datetimes"
+            project_directory: "dbt_olist"
+          environment_key: "Default"
+
+        # -----------------------------------------------
+        # --- test_gold_dim (4 TESTS) ---
+        # -----------------------------------------------
+        - task_key: test_gold_dim_customers
+          description: "Test dbt model dim_customers"
+          depends_on:
+            - task_key: run_gold_dim_customers
+          dbt_task:
+            catalog: ${var.catalog}
+            schema: ${var.gold_schema}
+            warehouse_id: ${var.warehouse_id}
+            commands:
+              - "dbt test --select dim_customers"
+            project_directory: "dbt_olist"
+          environment_key: "Default"
+
+        - task_key: test_gold_dim_products
+          description: "Test dbt model dim_products"
+          depends_on:
+            - task_key: run_gold_dim_products
+          dbt_task:
+            catalog: ${var.catalog}
+            schema: ${var.gold_schema}
+            warehouse_id: ${var.warehouse_id}
+            commands:
+              - "dbt test --select dim_products"
+            project_directory: "dbt_olist"
+          environment_key: "Default"
+
+        - task_key: test_gold_dim_sellers
+          description: "Test dbt model dim_sellers"
+          depends_on:
+            - task_key: run_gold_dim_sellers
+          dbt_task:
+            catalog: ${var.catalog}
+            schema: ${var.gold_schema}
+            warehouse_id: ${var.warehouse_id}
+            commands:
+              - "dbt test --select dim_sellers"
+            project_directory: "dbt_olist"
+          environment_key: "Default"
+
+        - task_key: test_gold_dim_datetimes
+          description: "Test dbt model dim_datetimes"
+          depends_on:
+            - task_key: run_gold_dim_datetimes
+          dbt_task:
+            catalog: ${var.catalog}
+            schema: ${var.gold_schema}
+            warehouse_id: ${var.warehouse_id}
+            commands:
+              - "dbt test --select dim_datetimes"
             project_directory: "dbt_olist"
           environment_key: "Default"
 
@@ -411,16 +486,16 @@ resources:
         - task_key: run_gold_fct_order_items
           description: "Chạy dbt model fct_order_items"
           depends_on:
-            - task_key: run_gold_dim_customers
-            - task_key: run_gold_dim_products
-            - task_key: run_gold_dim_sellers
-            - task_key: run_gold_dim_datetimes
+            - task_key: test_gold_dim_customers
+            - task_key: test_gold_dim_products
+            - task_key: test_gold_dim_sellers
+            - task_key: test_gold_dim_datetimes
             - task_key: test_silver_order_items
             - task_key: test_silver_orders
           dbt_task:
-            catalog: olist_project
-            schema: gold
-            warehouse_id: "956f28a1a104215e"
+            catalog: ${var.catalog}
+            schema: ${var.gold_schema}
+            warehouse_id: ${var.warehouse_id}
             commands:
               - "dbt deps"
               - "dbt run --select fct_order_items"
@@ -430,14 +505,14 @@ resources:
         - task_key: run_gold_fct_order_payments
           description: "Chạy dbt model fct_order_payments"
           depends_on:
-            - task_key: run_gold_dim_customers
-            - task_key: run_gold_dim_datetimes
+            - task_key: test_gold_dim_customers
+            - task_key: test_gold_dim_datetimes
             - task_key: test_silver_order_payments
             - task_key: test_silver_orders
           dbt_task:
-            catalog: olist_project
-            schema: gold
-            warehouse_id: "956f28a1a104215e"
+            catalog: ${var.catalog}
+            schema: ${var.gold_schema}
+            warehouse_id: ${var.warehouse_id}
             commands:
               - "dbt deps"
               - "dbt run --select fct_order_payments"
@@ -447,17 +522,59 @@ resources:
         - task_key: run_gold_fct_order_reviews
           description: "Chạy dbt model fct_order_reviews"
           depends_on:
-            - task_key: run_gold_dim_customers
-            - task_key: run_gold_dim_products
-            - task_key: run_gold_dim_datetimes
+            - task_key: test_gold_dim_customers
+            - task_key: test_gold_dim_products
+            - task_key: test_gold_dim_datetimes
             - task_key: test_silver_order_reviews
             - task_key: test_silver_orders
           dbt_task:
-            catalog: olist_project
-            schema: gold
-            warehouse_id: "956f28a1a104215e"
+            catalog: ${var.catalog}
+            schema: ${var.gold_schema}
+            warehouse_id: ${var.warehouse_id}
             commands:
               - "dbt deps"
               - "dbt run --select fct_order_reviews"
+            project_directory: "dbt_olist"
+          environment_key: "Default"
+
+        # -----------------------------------------------
+        # --- test_gold_fct (3 TESTS) ---
+        # -----------------------------------------------
+        - task_key: test_gold_fct_order_items
+          description: "Test dbt model fct_order_items"
+          depends_on:
+            - task_key: run_gold_fct_order_items
+          dbt_task:
+            catalog: ${var.catalog}
+            schema: ${var.gold_schema}
+            warehouse_id: ${var.warehouse_id}
+            commands:
+              - "dbt test --select fct_order_items"
+            project_directory: "dbt_olist"
+          environment_key: "Default"
+
+        - task_key: test_gold_fct_order_payments
+          description: "Test dbt model fct_order_payments"
+          depends_on:
+            - task_key: run_gold_fct_order_payments
+          dbt_task:
+            catalog: ${var.catalog}
+            schema: ${var.gold_schema}
+            warehouse_id: ${var.warehouse_id}
+            commands:
+              - "dbt test --select fct_order_payments"
+            project_directory: "dbt_olist"
+          environment_key: "Default"
+
+        - task_key: test_gold_fct_order_reviews
+          description: "Test dbt model fct_order_reviews"
+          depends_on:
+            - task_key: run_gold_fct_order_reviews
+          dbt_task:
+            catalog: ${var.catalog}
+            schema: ${var.gold_schema}
+            warehouse_id: ${var.warehouse_id}
+            commands:
+              - "dbt test --select fct_order_reviews"
             project_directory: "dbt_olist"
           environment_key: "Default"

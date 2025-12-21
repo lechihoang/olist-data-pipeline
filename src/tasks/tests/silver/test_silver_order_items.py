@@ -2,8 +2,13 @@
 # Test Silver Order Items - Validates data quality for silver order_items table
 # Requirements: 2.3 - Verify order_id + order_item_id composite key, price >= 0
 
+import os
+from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, concat_ws
+
+# Load .env file from root folder
+load_dotenv()
 
 def run_tests(spark: SparkSession, table_name: str) -> list:
     """Run data quality tests for silver order_items table"""
@@ -54,9 +59,11 @@ def run_tests(spark: SparkSession, table_name: str) -> list:
 if __name__ == "__main__":
     spark = SparkSession.builder.getOrCreate()
     
-    CATALOG = "olist_project"
-    SILVER_SCHEMA = "silver"
+    CATALOG = os.getenv("CATALOG", "olist_project")
+    SILVER_SCHEMA = os.getenv("SILVER_SCHEMA", "silver")
     TABLE_NAME = "order_items"
+    
+    print(f"Config loaded: catalog={CATALOG}, silver={SILVER_SCHEMA}")
     
     full_table_name = f"{CATALOG}.{SILVER_SCHEMA}.{TABLE_NAME}"
     

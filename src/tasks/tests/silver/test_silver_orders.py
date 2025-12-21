@@ -2,8 +2,13 @@
 # Test Silver Orders - Validates data quality for silver orders table
 # Requirements: 2.2 - Verify order_id UNIQUE, order_status valid
 
+import os
+from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
+
+# Load .env file from root folder
+load_dotenv()
 
 # Valid order statuses based on Olist dataset
 VALID_ORDER_STATUSES = [
@@ -56,9 +61,11 @@ def run_tests(spark: SparkSession, table_name: str) -> list:
 if __name__ == "__main__":
     spark = SparkSession.builder.getOrCreate()
     
-    CATALOG = "olist_project"
-    SILVER_SCHEMA = "silver"
+    CATALOG = os.getenv("CATALOG", "olist_project")
+    SILVER_SCHEMA = os.getenv("SILVER_SCHEMA", "silver")
     TABLE_NAME = "orders"
+    
+    print(f"Config loaded: catalog={CATALOG}, silver={SILVER_SCHEMA}")
     
     full_table_name = f"{CATALOG}.{SILVER_SCHEMA}.{TABLE_NAME}"
     

@@ -2,8 +2,13 @@
 # Test Silver Customers - Validates data quality for silver customers table
 # Requirements: 2.1 - Verify customer_id UNIQUE, customer_state UPPERCASE
 
+import os
+from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, upper
+
+# Load .env file from root folder
+load_dotenv()
 
 def run_tests(spark: SparkSession, table_name: str) -> list:
     """Run data quality tests for silver customers table"""
@@ -44,9 +49,11 @@ def run_tests(spark: SparkSession, table_name: str) -> list:
 if __name__ == "__main__":
     spark = SparkSession.builder.getOrCreate()
     
-    CATALOG = "olist_project"
-    SILVER_SCHEMA = "silver"
+    CATALOG = os.getenv("CATALOG", "olist_project")
+    SILVER_SCHEMA = os.getenv("SILVER_SCHEMA", "silver")
     TABLE_NAME = "customers"
+    
+    print(f"Config loaded: catalog={CATALOG}, silver={SILVER_SCHEMA}")
     
     full_table_name = f"{CATALOG}.{SILVER_SCHEMA}.{TABLE_NAME}"
     

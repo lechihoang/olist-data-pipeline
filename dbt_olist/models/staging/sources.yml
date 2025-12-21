@@ -7,9 +7,9 @@ sources:
   # Đây là "nhóm" nguồn, bạn có thể đặt tên tùy ý
   - name: olist_silver
 
-    # ⭐️ Đây là 2 dòng quan trọng nhất
-    database: olist_project # "Kho" (Catalog)
-    schema: silver         # "Ngăn" (Schema)
+    # ⭐️ Sử dụng dbt vars thay vì hardcode
+    database: "{{ var('catalog') }}"
+    schema: "{{ var('silver_schema') }}"
 
     # Liệt kê các bảng Silver "sạch" của bạn
     tables:

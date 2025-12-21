@@ -11,10 +11,23 @@
 import sys
 import json
 import os
+from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, current_timestamp
 from pyspark.dbutils import DBUtils
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType, TimestampType, BooleanType
+
+# --- LOAD CONFIGURATION FROM .env ---
+# Load .env file từ root folder (relative to workspace)
+env_path = "/Workspace/${workspace.file_path}/.env"
+load_dotenv(env_path)
+
+# Configuration với fallback defaults
+CATALOG = os.getenv("CATALOG", "olist_project")
+BRONZE_SCHEMA = os.getenv("BRONZE_SCHEMA", "bronze")
+SILVER_SCHEMA = os.getenv("SILVER_SCHEMA", "silver")
+STAGING_SCHEMA = os.getenv("STAGING_SCHEMA", "staging")
+LANDING_VOLUME = os.getenv("LANDING_VOLUME", "landing_zone")
 
 # --- HÀM HỖ TRỢ 1 (Giữ nguyên) ---
 def get_spark_type(type_name: str):
@@ -27,13 +40,31 @@ def get_spark_type(type_name: str):
     }
     return type_map.get(type_name.lower(), StringType()) 
 
-# --- HÀM HỖ TRỢ 2 (Đã sửa lỗi Path) ---
-def load_schema_from_json(table_name: str) -> StructType:
+# --- HÀM HỖ TRỢ 2 (Dynamic Schema Path) ---
+def load_schema_from_json(table_name: str, schema_base_path: str) -> StructType:
+    """
+    Load schema từ JSON file với configurable base path.
     
-    # ⭐️ DÙNG ĐƯỜNG DẪN TUYỆT ĐỐI (HARD-CODED)
-    schema_path = f"/Workspace/Users/lechihoang73@gmail.com/olist-data-pipeline/src/schemas/{table_name}.json"
+    Args:
+        table_name: Tên bảng (sẽ được dùng làm tên file JSON)
+        schema_base_path: Đường dẫn thư mục chứa schema files
+        
+    Returns:
+        StructType schema object
+        
+    Raises:
+        FileNotFoundError: Khi schema file không tồn tại tại đường dẫn đã cấu hình
+    """
+    schema_path = f"{schema_base_path}/{table_name}.json"
     
-    print(f"  Đang đọc schema (tuyệt đối) từ: {schema_path}")
+    print(f"  Đang đọc schema từ: {schema_path}")
+    
+    # Kiểm tra file tồn tại và raise error với message rõ ràng
+    if not os.path.exists(schema_path):
+        raise FileNotFoundError(
+            f"Schema file không tồn tại tại đường dẫn: {schema_path}. "
+            f"Vui lòng kiểm tra schema_base_path parameter hoặc đảm bảo file {table_name}.json tồn tại."
+        )
     
     fields = []
     
@@ -87,16 +118,29 @@ if __name__ == "__main__":
     
     spark = SparkSession.builder.getOrCreate()
     dbutils = DBUtils(spark) 
+    
+    # Print all resolved configuration values for debugging (Requirement 1.6)
+    print("--- Configuration Loaded from .env ---")
+    print(f"  CATALOG:        {CATALOG}")
+    print(f"  BRONZE_SCHEMA:  {BRONZE_SCHEMA}")
+    print(f"  SILVER_SCHEMA:  {SILVER_SCHEMA}")
+    print(f"  STAGING_SCHEMA: {STAGING_SCHEMA}")
+    print(f"  LANDING_VOLUME: {LANDING_VOLUME}")
+    print("--------------------------------------")
         
     source_dir_name = dbutils.widgets.get("source_dir_name")
     target_table_name = dbutils.widgets.get("target_table_name")
     
-    loaded_schema = load_schema_from_json(target_table_name)
-        
-    CATALOG = "olist_project"
-    STAGING_SCHEMA = "staging"
-    BRONZE_SCHEMA = "bronze"
-    LANDING_VOLUME = "landing_zone"
+    # ⭐️ Đọc schema_base_path từ widget, sử dụng default nếu không được cung cấp
+    try:
+        schema_base_path = dbutils.widgets.get("schema_base_path")
+        print(f"  Sử dụng schema_base_path từ widget: {schema_base_path}")
+    except Exception:
+        # Default: relative path từ bundle deployment location
+        schema_base_path = "/Workspace/${workspace.file_path}/src/schemas"
+        print(f"  Widget schema_base_path không được cung cấp, sử dụng default: {schema_base_path}")
+    
+    loaded_schema = load_schema_from_json(target_table_name, schema_base_path)
 
     landing_volume_path = f"/Volumes/{CATALOG}/{STAGING_SCHEMA}/{LANDING_VOLUME}/{source_dir_name}"
     

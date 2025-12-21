@@ -2,8 +2,13 @@
 # Test Bronze Geolocation - Validates data quality for geolocation_raw table
 # Requirements: 1.7 - Verify geolocation_zip_code_prefix NOT NULL
 
+import os
+from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
+
+# Load .env file from root folder
+load_dotenv()
 
 def run_tests(spark: SparkSession, table_name: str) -> list:
     """Run data quality tests for bronze geolocation table"""
@@ -35,9 +40,11 @@ def run_tests(spark: SparkSession, table_name: str) -> list:
 if __name__ == "__main__":
     spark = SparkSession.builder.getOrCreate()
     
-    CATALOG = "olist_project"
-    BRONZE_SCHEMA = "bronze"
+    CATALOG = os.getenv("CATALOG", "olist_project")
+    BRONZE_SCHEMA = os.getenv("BRONZE_SCHEMA", "bronze")
     TABLE_NAME = "geolocation_raw"
+    
+    print(f"Config loaded: catalog={CATALOG}, bronze={BRONZE_SCHEMA}")
     
     full_table_name = f"{CATALOG}.{BRONZE_SCHEMA}.{TABLE_NAME}"
     

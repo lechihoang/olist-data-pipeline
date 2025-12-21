@@ -2,8 +2,8 @@
     
 {{
     config(
-      target_database='olist_project',
-      target_schema='gold',
+      target_database=var('catalog'),
+      target_schema=var('gold_schema'),
       unique_key='customer_unique_id',
       strategy='check',
       check_cols=['customer_zip_code_prefix', 'customer_city', 'customer_state']

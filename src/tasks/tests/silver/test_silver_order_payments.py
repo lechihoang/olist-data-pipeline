@@ -2,8 +2,13 @@
 # Test Silver Order Payments - Validates data quality for silver order_payments table
 # Requirements: 2.4 - Verify payment_value >= 0, payment_type valid
 
+import os
+from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
+
+# Load .env file from root folder
+load_dotenv()
 
 # Valid payment types based on Olist dataset
 VALID_PAYMENT_TYPES = [
@@ -53,9 +58,11 @@ def run_tests(spark: SparkSession, table_name: str) -> list:
 if __name__ == "__main__":
     spark = SparkSession.builder.getOrCreate()
     
-    CATALOG = "olist_project"
-    SILVER_SCHEMA = "silver"
+    CATALOG = os.getenv("CATALOG", "olist_project")
+    SILVER_SCHEMA = os.getenv("SILVER_SCHEMA", "silver")
     TABLE_NAME = "order_payments"
+    
+    print(f"Config loaded: catalog={CATALOG}, silver={SILVER_SCHEMA}")
     
     full_table_name = f"{CATALOG}.{SILVER_SCHEMA}.{TABLE_NAME}"
     

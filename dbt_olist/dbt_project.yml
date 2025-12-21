@@ -15,6 +15,11 @@ clean-targets:
   - "target"
   - "dbt_packages"
 
+# Variables với default values
+vars:
+  catalog: olist_project
+  silver_schema: silver
+  gold_schema: gold
 
 models:
   dbt_olist:
@@ -26,10 +31,10 @@ models:
     
     gold:
       +materialized: table
-      +database: olist_project
+      +database: "{{ var('catalog') }}"
 
 
 snapshots:
   dbt_olist: # (Phải khớp với 'name:')
-    +target_database: olist_project
-    +target_schema: gold
+    +target_database: "{{ var('catalog') }}"
+    +target_schema: "{{ var('gold_schema') }}"

@@ -1,9 +1,21 @@
 # Databricks notebook source
 
 import sys
+import os
+from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, upper, avg, first
 from pyspark.dbutils import DBUtils 
+
+# --- LOAD CONFIGURATION FROM .env ---
+env_path = "/Workspace/${workspace.file_path}/.env"
+load_dotenv(env_path)
+
+# Configuration với fallback defaults
+CATALOG = os.getenv("CATALOG", "olist_project")
+BRONZE_SCHEMA = os.getenv("BRONZE_SCHEMA", "bronze")
+SILVER_SCHEMA = os.getenv("SILVER_SCHEMA", "silver")
+STAGING_SCHEMA = os.getenv("STAGING_SCHEMA", "staging")
 
 def process_silver_geolocation(spark: SparkSession, bronze_table_name: str, silver_table_name: str):
 
@@ -44,11 +56,18 @@ def process_silver_geolocation(spark: SparkSession, bronze_table_name: str, silv
 if __name__ == "__main__":
   spark = SparkSession.builder.getOrCreate()
   dbutils = DBUtils(spark)
+  
+  # Print all resolved configuration values for debugging
+  print("--- Configuration Loaded from .env ---")
+  print(f"  CATALOG:        {CATALOG}")
+  print(f"  BRONZE_SCHEMA:  {BRONZE_SCHEMA}")
+  print(f"  SILVER_SCHEMA:  {SILVER_SCHEMA}")
+  print(f"  STAGING_SCHEMA: {STAGING_SCHEMA}")
+  print("--------------------------------------")
+  
   bronze_table_input = dbutils.widgets.get("bronze_table_input")
   silver_table_output = dbutils.widgets.get("silver_table_output")
-  CATALOG = "olist_project"
-  BRONZE_SCHEMA = "bronze"
-  SILVER_SCHEMA = "silver"
+  
   bronze_table_full_name = f"{CATALOG}.{BRONZE_SCHEMA}.{bronze_table_input}"
   silver_table_full_name = f"{CATALOG}.{SILVER_SCHEMA}.{silver_table_output}"
   process_silver_geolocation(spark, bronze_table_full_name, silver_table_full_name)
