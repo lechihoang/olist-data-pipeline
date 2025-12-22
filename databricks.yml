@@ -29,6 +29,7 @@ resources:
             dependencies:
                 - "dbt-core==1.8.0"
                 - "dbt-databricks==1.8.0"
+                - "python-dotenv"
 
       queue:
         enabled: true

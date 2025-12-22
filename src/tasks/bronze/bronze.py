@@ -94,6 +94,8 @@ def load_bronze(spark: SparkSession, landing_volume_path: str, bronze_table_name
         .format("cloudFiles")
         .option("cloudFiles.format", "csv")
         .option("header", "true")
+        .option("multiLine", "true")      # Xử lý text có newline trong quotes
+        .option("escape", "\"")           # Xử lý escaped quotes ("") trong CSV
         .schema(schema_obj)
         .option("cloudFiles.schemaLocation", checkpoint_path)
         .option("maxFilesPerTrigger", 10) 
