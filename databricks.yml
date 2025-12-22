@@ -45,7 +45,7 @@ resources:
             base_parameters:
               source_dir_name: "orders"
               target_table_name: "orders_raw"
-              schema_base_path: "/Workspace/${workspace.file_path}/src/schemas"
+              schema_base_path: "${workspace.file_path}/src/schemas"
           environment_key: "Default"
 
         - task_key: run_bronze_customers
@@ -55,7 +55,7 @@ resources:
             base_parameters:
               source_dir_name: "customers"
               target_table_name: "customers_raw"
-              schema_base_path: "/Workspace/${workspace.file_path}/src/schemas"
+              schema_base_path: "${workspace.file_path}/src/schemas"
           environment_key: "Default"
 
         - task_key: run_bronze_order_items
@@ -65,7 +65,7 @@ resources:
             base_parameters:
               source_dir_name: "order_items"
               target_table_name: "order_items_raw"
-              schema_base_path: "/Workspace/${workspace.file_path}/src/schemas"
+              schema_base_path: "${workspace.file_path}/src/schemas"
           environment_key: "Default"
 
         - task_key: run_bronze_order_payments
@@ -75,7 +75,7 @@ resources:
             base_parameters:
               source_dir_name: "order_payments"
               target_table_name: "order_payments_raw"
-              schema_base_path: "/Workspace/${workspace.file_path}/src/schemas"
+              schema_base_path: "${workspace.file_path}/src/schemas"
           environment_key: "Default"
 
         - task_key: run_bronze_products
@@ -85,7 +85,7 @@ resources:
             base_parameters:
               source_dir_name: "products"
               target_table_name: "products_raw"
-              schema_base_path: "/Workspace/${workspace.file_path}/src/schemas"
+              schema_base_path: "${workspace.file_path}/src/schemas"
           environment_key: "Default"
 
         - task_key: run_bronze_sellers
@@ -95,7 +95,7 @@ resources:
             base_parameters:
               source_dir_name: "sellers"
               target_table_name: "sellers_raw"
-              schema_base_path: "/Workspace/${workspace.file_path}/src/schemas"
+              schema_base_path: "${workspace.file_path}/src/schemas"
           environment_key: "Default"
 
         - task_key: run_bronze_geolocation
@@ -105,7 +105,7 @@ resources:
             base_parameters:
               source_dir_name: "geolocation"
               target_table_name: "geolocation_raw"
-              schema_base_path: "/Workspace/${workspace.file_path}/src/schemas"
+              schema_base_path: "${workspace.file_path}/src/schemas"
           environment_key: "Default"
 
         - task_key: run_bronze_order_reviews
@@ -115,7 +115,7 @@ resources:
             base_parameters:
               source_dir_name: "order_reviews"
               target_table_name: "order_reviews_raw"
-              schema_base_path: "/Workspace/${workspace.file_path}/src/schemas"
+              schema_base_path: "${workspace.file_path}/src/schemas"
           environment_key: "Default"
 
         - task_key: run_bronze_product_translation
@@ -125,7 +125,7 @@ resources:
             base_parameters:
               source_dir_name: "product_category_name_translation"
               target_table_name: "product_category_name_translation_raw"
-              schema_base_path: "/Workspace/${workspace.file_path}/src/schemas"
+              schema_base_path: "${workspace.file_path}/src/schemas"
           environment_key: "Default"
 
         # -----------------------------------------------

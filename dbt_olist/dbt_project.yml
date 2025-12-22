@@ -31,10 +31,8 @@ models:
     
     gold:
       +materialized: table
-      +database: "{{ var('catalog') }}"
 
 
 snapshots:
-  dbt_olist: # (Phải khớp với 'name:')
-    +target_database: "{{ var('catalog') }}"
+  dbt_olist:
     +target_schema: "{{ var('gold_schema') }}"
