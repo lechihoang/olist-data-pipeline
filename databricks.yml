@@ -99,11 +99,12 @@ resources:
           environment_key: "Default"
 
         - task_key: run_bronze_geolocation
-          description: "Nạp file 'geolocation' vào bảng bronze.geolocation_raw"
+          description: "Nạp file 'geolocation' vào bảng bronze.geolocation_raw (static data)"
           notebook_task:
-            notebook_path: src/tasks/bronze/bronze.py
+            notebook_path: src/tasks/bronze/bronze_static.py
             base_parameters:
-              source_dir_name: "geolocation"
+              source_dir_name: "static"
+              source_file_name: "geolocation.csv"
               target_table_name: "geolocation_raw"
               schema_base_path: "${workspace.file_path}/src/schemas"
           environment_key: "Default"
@@ -119,11 +120,12 @@ resources:
           environment_key: "Default"
 
         - task_key: run_bronze_product_translation
-          description: "Nạp file 'product_category_name_translation'..."
+          description: "Nạp file 'product_category_name_translation' (static data)"
           notebook_task:
-            notebook_path: src/tasks/bronze/bronze.py
+            notebook_path: src/tasks/bronze/bronze_static.py
             base_parameters:
-              source_dir_name: "product_category_name_translation"
+              source_dir_name: "static"
+              source_file_name: "product_category_name_translation.csv"
               target_table_name: "product_category_name_translation_raw"
               schema_base_path: "${workspace.file_path}/src/schemas"
           environment_key: "Default"

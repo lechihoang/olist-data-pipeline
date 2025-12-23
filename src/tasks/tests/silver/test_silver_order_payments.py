@@ -1,6 +1,6 @@
 # Databricks notebook source
 # Test Silver Order Payments - Validates data quality for silver order_payments table
-# Requirements: 2.4 - Verify payment_value >= 0, payment_type valid
+# Requirements: 2.4 - Verify composite key (order_id, payment_sequential) UNIQUE, payment_value >= 0, payment_type valid
 
 import os
 from dotenv import load_dotenv
@@ -34,7 +34,16 @@ def run_tests(spark: SparkSession, table_name: str) -> list:
         "row_count": row_count
     })
     
-    # Test 2: payment_value >= 0
+    # Test 2: Composite key (order_id, payment_sequential) UNIQUE
+    distinct_count = df.select("order_id", "payment_sequential").distinct().count()
+    results.append({
+        "test_name": "composite_key_unique",
+        "passed": distinct_count == row_count,
+        "details": f"Total rows: {row_count}, Distinct (order_id, payment_sequential): {distinct_count}",
+        "row_count": row_count
+    })
+    
+    # Test 3: payment_value >= 0
     negative_payment_count = df.filter(col("payment_value") < 0).count()
     results.append({
         "test_name": "payment_value_non_negative",
@@ -43,7 +52,7 @@ def run_tests(spark: SparkSession, table_name: str) -> list:
         "row_count": row_count
     })
     
-    # Test 3: payment_type valid
+    # Test 4: payment_type valid
     invalid_type_count = df.filter(~col("payment_type").isin(VALID_PAYMENT_TYPES)).count()
     results.append({
         "test_name": "payment_type_valid",

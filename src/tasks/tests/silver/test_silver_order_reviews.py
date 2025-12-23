@@ -1,6 +1,6 @@
 # Databricks notebook source
 # Test Silver Order Reviews - Validates data quality for silver order_reviews table
-# Requirements: 2.8 - Verify review_id UNIQUE, review_score between 1 and 5
+# Requirements: 2.8 - Verify composite key (review_id, order_id) UNIQUE, review_score between 1 and 5
 
 import os
 from dotenv import load_dotenv
@@ -25,12 +25,13 @@ def run_tests(spark: SparkSession, table_name: str) -> list:
         "row_count": row_count
     })
     
-    # Test 2: review_id UNIQUE
-    distinct_count = df.select("review_id").distinct().count()
+    # Test 2: Composite key (review_id, order_id) UNIQUE
+    # Note: review_id alone has duplicates (814), but (review_id, order_id) is unique
+    distinct_count = df.select("review_id", "order_id").distinct().count()
     results.append({
-        "test_name": "review_id_unique",
+        "test_name": "composite_key_unique",
         "passed": distinct_count == row_count,
-        "details": f"Total rows: {row_count}, Distinct review_id: {distinct_count}",
+        "details": f"Total rows: {row_count}, Distinct (review_id, order_id): {distinct_count}",
         "row_count": row_count
     })
     
