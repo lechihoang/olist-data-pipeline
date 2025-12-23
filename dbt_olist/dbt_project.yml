@@ -31,8 +31,3 @@ models:
     
     gold:
       +materialized: table
-
-
-snapshots:
-  dbt_olist:
-    +target_schema: "{{ var('gold_schema') }}"
