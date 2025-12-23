@@ -5,6 +5,10 @@
   )
 }}
 
+-- Dependencies: Ensure Dimension tables are built before Fact tables
+{% set _ = ref('dim_customers') %}
+{% set _ = ref('dim_datetimes') %}
+
 SELECT
     r.review_id,
     r.order_id,

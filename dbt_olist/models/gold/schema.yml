@@ -75,6 +75,12 @@ models:
           - relationships:
               to: ref('dim_customers')
               field: customer_id
+      - name: order_date
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_datetimes')
+              field: date_id
               
   - name: fct_order_reviews
     columns:
@@ -84,3 +90,14 @@ models:
       - name: order_id
         tests:
           - not_null
+      - name: customer_id
+        tests:
+          - relationships:
+              to: ref('dim_customers')
+              field: customer_id
+      - name: review_date
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_datetimes')
+              field: date_id

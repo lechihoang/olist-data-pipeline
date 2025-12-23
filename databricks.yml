@@ -368,6 +368,19 @@ resources:
           environment_key: "Default"
 
         # -----------------------------------------------
+        # --- ML TASKS ---
+        # -----------------------------------------------
+        - task_key: run_ml_customer_segmentation
+          description: "Predict Customer Segments using K-Means clustering"
+          depends_on:
+            - task_key: test_silver_customers
+            - task_key: test_silver_orders
+            - task_key: test_silver_order_payments
+          notebook_task:
+            notebook_path: src/tasks/ml/customer_segmentation.py
+          environment_key: "Default"
+
+        # -----------------------------------------------
         # --- run_gold_dim (4 TASKS) ---
         # -----------------------------------------------
         - task_key: run_gold_dim_customers
@@ -483,16 +496,39 @@ resources:
             project_directory: "dbt_olist"
           environment_key: "Default"
 
+        - task_key: run_gold_dim_customer_segments
+          description: "Chạy dbt model dim_customer_segments"
+          depends_on:
+            - task_key: run_ml_customer_segmentation
+          dbt_task:
+            catalog: ${var.catalog}
+            schema: ${var.gold_schema}
+            warehouse_id: ${var.warehouse_id}
+            commands:
+              - "dbt deps"
+              - "dbt run --select dim_customer_segments"
+            project_directory: "dbt_olist"
+          environment_key: "Default"
+
+        - task_key: test_gold_dim_customer_segments
+          description: "Test dbt model dim_customer_segments"
+          depends_on:
+            - task_key: run_gold_dim_customer_segments
+          dbt_task:
+            catalog: ${var.catalog}
+            schema: ${var.gold_schema}
+            warehouse_id: ${var.warehouse_id}
+            commands:
+              - "dbt test --select dim_customer_segments"
+            project_directory: "dbt_olist"
+          environment_key: "Default"
+
         # -----------------------------------------------
         # --- run_gold_fct (3 TASKS) ---
         # -----------------------------------------------
         - task_key: run_gold_fct_order_items
           description: "Chạy dbt model fct_order_items"
           depends_on:
-            - task_key: test_gold_dim_customers
-            - task_key: test_gold_dim_products
-            - task_key: test_gold_dim_sellers
-            - task_key: test_gold_dim_datetimes
             - task_key: test_silver_order_items
             - task_key: test_silver_orders
           dbt_task:
@@ -508,8 +544,6 @@ resources:
         - task_key: run_gold_fct_order_payments
           description: "Chạy dbt model fct_order_payments"
           depends_on:
-            - task_key: test_gold_dim_customers
-            - task_key: test_gold_dim_datetimes
             - task_key: test_silver_order_payments
             - task_key: test_silver_orders
           dbt_task:
@@ -525,9 +559,6 @@ resources:
         - task_key: run_gold_fct_order_reviews
           description: "Chạy dbt model fct_order_reviews"
           depends_on:
-            - task_key: test_gold_dim_customers
-            - task_key: test_gold_dim_products
-            - task_key: test_gold_dim_datetimes
             - task_key: test_silver_order_reviews
             - task_key: test_silver_orders
           dbt_task:

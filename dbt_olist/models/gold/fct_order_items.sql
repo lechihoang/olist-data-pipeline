@@ -5,6 +5,12 @@
   )
 }}
 
+-- Dependencies: Ensure Dimension tables are built before Fact tables
+{% set _ = ref('dim_customers') %}
+{% set _ = ref('dim_products') %}
+{% set _ = ref('dim_sellers') %}
+{% set _ = ref('dim_datetimes') %}
+
 WITH order_items AS (
     SELECT * FROM {{ source('olist_silver', 'order_items') }}
 ),
