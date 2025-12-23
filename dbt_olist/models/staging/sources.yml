@@ -21,3 +21,12 @@ sources:
       - name: order_reviews
       - name: products
       - name: sellers
+
+  # ML Layer source
+  - name: olist_ml
+    database: "{{ var('catalog') }}"
+    schema: ml
+    description: "ML model outputs"
+    tables:
+      - name: customer_segments
+        description: "Customer segments from K-Means clustering based on RFM analysis"

@@ -84,3 +84,39 @@ models:
       - name: order_id
         tests:
           - not_null
+
+  # --- 3. CUSTOMER SEGMENTS (ML OUTPUT) ---
+  - name: dim_customer_segments
+    description: "Customer segments based on RFM analysis and K-Means clustering"
+    columns:
+      - name: customer_unique_id
+        description: "Unique customer identifier"
+        tests:
+          - not_null
+          - unique
+      - name: recency_days
+        description: "Days since last purchase"
+        tests:
+          - not_null
+      - name: frequency
+        description: "Number of orders"
+        tests:
+          - not_null
+      - name: monetary
+        description: "Total spending amount"
+        tests:
+          - not_null
+      - name: cluster_id
+        description: "Cluster ID from K-Means model"
+        tests:
+          - not_null
+      - name: segment_name
+        description: "Business-friendly segment name"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Champions', 'Loyal Customers', 'Potential Loyalists', 'At Risk', 'Unknown']
+      - name: model_version
+        description: "MLflow model version used for prediction"
+        tests:
+          - not_null
