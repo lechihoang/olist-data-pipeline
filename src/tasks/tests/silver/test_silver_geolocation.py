@@ -1,40 +1,78 @@
 # Databricks notebook source
 # Test Silver Geolocation - Validates data quality for silver geolocation table
-# Requirements: 2.7 - Verify geolocation_zip_code_prefix UNIQUE after deduplication
+# Using Great Expectations for production-grade testing
 
 import os
 from dotenv import load_dotenv
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col
+import great_expectations as gx
 
-# Load .env file from root folder
 load_dotenv()
 
-def run_tests(spark: SparkSession, table_name: str) -> list:
-    """Run data quality tests for silver geolocation table"""
-    results = []
+def run_tests(spark: SparkSession, table_name: str):
+    """Run data quality tests using Great Expectations"""
     
     df = spark.table(table_name)
     
-    # Test 1: Row count > 0
-    row_count = df.count()
-    results.append({
-        "test_name": "row_count_positive",
-        "passed": row_count > 0,
-        "details": f"Row count: {row_count}",
-        "row_count": row_count
-    })
+    # Create ephemeral GX context
+    context = gx.get_context(mode="ephemeral")
     
-    # Test 2: geolocation_zip_code_prefix UNIQUE (after deduplication in silver)
-    distinct_count = df.select("geolocation_zip_code_prefix").distinct().count()
-    results.append({
-        "test_name": "geolocation_zip_code_prefix_unique",
-        "passed": distinct_count == row_count,
-        "details": f"Total rows: {row_count}, Distinct zip_code_prefix: {distinct_count}",
-        "row_count": row_count
-    })
+    # Create Spark datasource
+    datasource = context.sources.add_or_update_spark("spark_ds")
+    data_asset = datasource.add_dataframe_asset(name="geolocation")
+    batch_request = data_asset.build_batch_request(dataframe=df)
     
-    return results
+    # Create expectation suite
+    suite = context.add_or_update_expectation_suite("silver_geolocation_suite")
+    
+    # Create validator
+    validator = context.get_validator(
+        batch_request=batch_request,
+        expectation_suite=suite
+    )
+    
+    # === ROW COUNT ===
+    validator.expect_table_row_count_to_be_between(min_value=1)
+    
+    # === SCHEMA VALIDATION ===
+    validator.expect_table_columns_to_match_set(
+        column_set=[
+            "geolocation_zip_code_prefix",
+            "geolocation_lat",
+            "geolocation_lng",
+            "geolocation_city",
+            "geolocation_state"
+        ],
+        exact_match=False
+    )
+    
+    # === UNIQUENESS (after groupBy dedup in transformation) ===
+    validator.expect_column_values_to_be_unique("geolocation_zip_code_prefix")
+    
+    # === NOT NULL ===
+    validator.expect_column_values_to_not_be_null("geolocation_zip_code_prefix")
+    
+    # === VALUE RANGE (Brazil geographic bounds) ===
+    validator.expect_column_values_to_be_between(
+        column="geolocation_lat",
+        min_value=-34.0,
+        max_value=5.0
+    )
+    
+    validator.expect_column_values_to_be_between(
+        column="geolocation_lng",
+        min_value=-74.0,
+        max_value=-32.0
+    )
+    
+    # === FORMAT VALIDATION (uppercase after transformation) ===
+    validator.expect_column_values_to_match_regex(
+        column="geolocation_state",
+        regex=r"^[A-Z]{2}$"
+    )
+    
+    return validator.validate()
+
 
 # --- ENTRYPOINT ---
 if __name__ == "__main__":
@@ -53,13 +91,14 @@ if __name__ == "__main__":
     results = run_tests(spark, full_table_name)
     
     # Print results
-    for r in results:
-        status = "✅ PASSED" if r["passed"] else "❌ FAILED"
-        print(f"  {status}: {r['test_name']} - {r['details']}")
+    for r in results.results:
+        status = "PASSED" if r.success else "FAILED"
+        exp_type = r.expectation_config.expectation_type
+        print(f"  [{status}] {exp_type}")
     
     # Raise exception if any test failed
-    failed_tests = [r for r in results if not r["passed"]]
-    if failed_tests:
-        raise Exception(f"Data quality tests FAILED for {full_table_name}: {[r['test_name'] for r in failed_tests]}")
+    if not results.success:
+        failed = [r.expectation_config.expectation_type for r in results.results if not r.success]
+        raise Exception(f"Data quality tests FAILED for {full_table_name}: {failed}")
     
     print(f"--- All tests PASSED for {full_table_name} ---")

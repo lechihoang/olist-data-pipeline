@@ -1,67 +1,91 @@
 # Databricks notebook source
 # Test Silver Order Payments - Validates data quality for silver order_payments table
-# Requirements: 2.4 - Verify composite key (order_id, payment_sequential) UNIQUE, payment_value >= 0, payment_type valid
+# Using Great Expectations for production-grade testing
 
 import os
 from dotenv import load_dotenv
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col
+import great_expectations as gx
 
-# Load .env file from root folder
 load_dotenv()
 
-# Valid payment types based on Olist dataset
-VALID_PAYMENT_TYPES = [
-    "credit_card",
-    "boleto",
-    "voucher",
-    "debit_card",
-    "not_defined"
-]
-
-def run_tests(spark: SparkSession, table_name: str) -> list:
-    """Run data quality tests for silver order_payments table"""
-    results = []
+def run_tests(spark: SparkSession, table_name: str):
+    """Run data quality tests using Great Expectations"""
     
     df = spark.table(table_name)
     
-    # Test 1: Row count > 0
-    row_count = df.count()
-    results.append({
-        "test_name": "row_count_positive",
-        "passed": row_count > 0,
-        "details": f"Row count: {row_count}",
-        "row_count": row_count
-    })
+    # Create ephemeral GX context
+    context = gx.get_context(mode="ephemeral")
     
-    # Test 2: Composite key (order_id, payment_sequential) UNIQUE
-    distinct_count = df.select("order_id", "payment_sequential").distinct().count()
-    results.append({
-        "test_name": "composite_key_unique",
-        "passed": distinct_count == row_count,
-        "details": f"Total rows: {row_count}, Distinct (order_id, payment_sequential): {distinct_count}",
-        "row_count": row_count
-    })
+    # Create Spark datasource
+    datasource = context.sources.add_or_update_spark("spark_ds")
+    data_asset = datasource.add_dataframe_asset(name="order_payments")
+    batch_request = data_asset.build_batch_request(dataframe=df)
     
-    # Test 3: payment_value >= 0
-    negative_payment_count = df.filter(col("payment_value") < 0).count()
-    results.append({
-        "test_name": "payment_value_non_negative",
-        "passed": negative_payment_count == 0,
-        "details": f"Negative payment_value count: {negative_payment_count}",
-        "row_count": row_count
-    })
+    # Create expectation suite
+    suite = context.add_or_update_expectation_suite("silver_order_payments_suite")
     
-    # Test 4: payment_type valid
-    invalid_type_count = df.filter(~col("payment_type").isin(VALID_PAYMENT_TYPES)).count()
-    results.append({
-        "test_name": "payment_type_valid",
-        "passed": invalid_type_count == 0,
-        "details": f"Invalid payment_type count: {invalid_type_count}",
-        "row_count": row_count
-    })
+    # Create validator
+    validator = context.get_validator(
+        batch_request=batch_request,
+        expectation_suite=suite
+    )
     
-    return results
+    # === ROW COUNT ===
+    validator.expect_table_row_count_to_be_between(min_value=1)
+    
+    # === SCHEMA VALIDATION ===
+    validator.expect_table_columns_to_match_set(
+        column_set=[
+            "order_id",
+            "payment_sequential",
+            "payment_type",
+            "payment_installments",
+            "payment_value"
+        ],
+        exact_match=False
+    )
+    
+    # === COMPOSITE KEY UNIQUENESS ===
+    validator.expect_compound_columns_to_be_unique(
+        column_list=["order_id", "payment_sequential"]
+    )
+    
+    # === NOT NULL ===
+    validator.expect_column_values_to_not_be_null("order_id")
+    validator.expect_column_values_to_not_be_null("payment_sequential")
+    validator.expect_column_values_to_not_be_null("payment_type")
+    
+    # === VALUE RANGE (from WHERE clause in transformation) ===
+    validator.expect_column_values_to_be_between(
+        column="payment_sequential",
+        min_value=1
+    )
+    
+    validator.expect_column_values_to_be_between(
+        column="payment_installments",
+        min_value=1
+    )
+    
+    validator.expect_column_values_to_be_between(
+        column="payment_value",
+        min_value=0
+    )
+    
+    # === VALUE SET VALIDATION ===
+    validator.expect_column_values_to_be_in_set(
+        column="payment_type",
+        value_set=[
+            "credit_card",
+            "boleto",
+            "voucher",
+            "debit_card",
+            "not_defined"
+        ]
+    )
+    
+    return validator.validate()
+
 
 # --- ENTRYPOINT ---
 if __name__ == "__main__":
@@ -80,13 +104,14 @@ if __name__ == "__main__":
     results = run_tests(spark, full_table_name)
     
     # Print results
-    for r in results:
-        status = "✅ PASSED" if r["passed"] else "❌ FAILED"
-        print(f"  {status}: {r['test_name']} - {r['details']}")
+    for r in results.results:
+        status = "PASSED" if r.success else "FAILED"
+        exp_type = r.expectation_config.expectation_type
+        print(f"  [{status}] {exp_type}")
     
     # Raise exception if any test failed
-    failed_tests = [r for r in results if not r["passed"]]
-    if failed_tests:
-        raise Exception(f"Data quality tests FAILED for {full_table_name}: {[r['test_name'] for r in failed_tests]}")
+    if not results.success:
+        failed = [r.expectation_config.expectation_type for r in results.results if not r.success]
+        raise Exception(f"Data quality tests FAILED for {full_table_name}: {failed}")
     
     print(f"--- All tests PASSED for {full_table_name} ---")
