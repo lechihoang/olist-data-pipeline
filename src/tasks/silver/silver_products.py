@@ -47,10 +47,10 @@ def process_silver_products(spark: SparkSession, bronze_products_table: str, bro
             col("product_name_lenght").cast("integer").alias("product_name_length"),
             col("product_description_lenght").cast("integer").alias("product_description_length"),
             col("product_photos_qty").cast("integer"),
-            col("product_weight_g").cast("integer"),
-            col("product_length_cm").cast("integer"),
-            col("product_height_cm").cast("integer"),
-            col("product_width_cm").cast("integer")
+            col("product_weight_g").cast("double"),
+            col("product_length_cm").cast("double"),
+            col("product_height_cm").cast("double"),
+            col("product_width_cm").cast("double")
         )
         .where("""
             product_id IS NOT NULL

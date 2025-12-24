@@ -1,90 +1,108 @@
 # Databricks notebook source
 # Test Silver Sellers - Validates data quality for silver sellers table
-# Using Great Expectations for production-grade testing
+# Using Pandera for PySpark (compatible with Databricks Serverless)
 
 import os
 from dotenv import load_dotenv
-from pyspark.sql import SparkSession
-import great_expectations as gx
+import pandera.pyspark as pa
+from pandera.pyspark import DataFrameModel, Field
+import pyspark.sql.types as T
+from pyspark.sql import functions as F
 
 load_dotenv()
 
-def run_tests(spark: SparkSession, table_name: str):
-    """Run data quality tests using Great Expectations"""
+
+# --- SCHEMA DEFINITION ---
+class SilverSellersSchema(DataFrameModel):
+    """
+    Pandera schema for silver.sellers table.
+    Validates schema structure and data quality.
+    """
     
+    # Define columns with their types and constraints
+    seller_id: T.StringType() = Field(nullable=False)  # Primary key - NOT NULL
+    seller_zip_code_prefix: T.StringType() = Field(nullable=True)
+    seller_city: T.StringType() = Field(nullable=True)
+    seller_state: T.StringType() = Field(nullable=True)
+
+    # Custom dataframe-level check for row count
+    @pa.dataframe_check
+    def min_row_count(cls, df) -> bool:
+        """Ensure DataFrame has at least 1 row."""
+        return df.count() >= 1
+
+    # Custom check for uniqueness of seller_id
+    @pa.dataframe_check
+    def unique_seller_id(cls, df) -> bool:
+        """Ensure seller_id is unique."""
+        total_count = df.count()
+        distinct_count = df.select("seller_id").distinct().count()
+        return total_count == distinct_count
+
+    # Custom check for state format (uppercase 2-letter code)
+    @pa.dataframe_check
+    def valid_state_format(cls, df) -> bool:
+        """Ensure seller_state matches ^[A-Z]{2}$ pattern."""
+        pattern = r"^[A-Z]{2}$"
+        invalid_count = df.filter(
+            (F.col("seller_state").isNotNull()) & 
+            (~F.col("seller_state").rlike(pattern))
+        ).count()
+        return invalid_count == 0
+
+
+def run_tests(spark, table_name: str) -> dict:
+    """
+    Run data quality tests using Pandera.
+    
+    Args:
+        spark: SparkSession
+        table_name: Full table name (catalog.schema.table)
+    
+    Returns:
+        dict with 'success' boolean and 'errors' details
+    """
+    # 1. Read table
     df = spark.table(table_name)
     
-    # Create ephemeral GX context
-    context = gx.get_context(mode="ephemeral")
+    # 2. Validate with Pandera schema
+    df_validated = SilverSellersSchema.validate(check_obj=df)
     
-    # Create Spark datasource
-    datasource = context.sources.add_or_update_spark("spark_ds")
-    data_asset = datasource.add_dataframe_asset(name="sellers")
-    batch_request = data_asset.build_batch_request(dataframe=df)
+    # 3. Collect errors from validation
+    errors = df_validated.pandera.errors
     
-    # Create expectation suite
-    suite = context.add_or_update_expectation_suite("silver_sellers_suite")
+    # 4. Build result
+    result = {
+        "success": len(errors) == 0,
+        "errors": errors,
+        "row_count": df.count(),
+        "schema_name": "SilverSellersSchema"
+    }
     
-    # Create validator
-    validator = context.get_validator(
-        batch_request=batch_request,
-        expectation_suite=suite
-    )
-    
-    # === ROW COUNT ===
-    validator.expect_table_row_count_to_be_between(min_value=1)
-    
-    # === SCHEMA VALIDATION ===
-    validator.expect_table_columns_to_match_set(
-        column_set=[
-            "seller_id",
-            "seller_zip_code_prefix",
-            "seller_city",
-            "seller_state"
-        ],
-        exact_match=False
-    )
-    
-    # === UNIQUENESS ===
-    validator.expect_column_values_to_be_unique("seller_id")
-    
-    # === NOT NULL ===
-    validator.expect_column_values_to_not_be_null("seller_id")
-    
-    # === FORMAT VALIDATION (uppercase after transformation) ===
-    validator.expect_column_values_to_match_regex(
-        column="seller_state",
-        regex=r"^[A-Z]{2}$"
-    )
-    
-    return validator.validate()
+    return result
 
 
 # --- ENTRYPOINT ---
-if __name__ == "__main__":
-    spark = SparkSession.builder.getOrCreate()
-    
-    CATALOG = os.getenv("CATALOG", "olist_project")
-    SILVER_SCHEMA = os.getenv("SILVER_SCHEMA", "silver")
-    TABLE_NAME = "sellers"
-    
-    print(f"Config loaded: catalog={CATALOG}, silver={SILVER_SCHEMA}")
-    
-    full_table_name = f"{CATALOG}.{SILVER_SCHEMA}.{TABLE_NAME}"
-    
-    print(f"--- Running Data Quality Tests for {full_table_name} ---")
-    
-    results = run_tests(spark, full_table_name)
-    
-    # Print results
-    for r in results.results:
-        status = "PASSED" if r.success else "FAILED"
-        exp_type = r.expectation_config.expectation_type
-        print(f"  [{status}] {exp_type}")
-    
-    # Raise exception if any test failed
-    if not results.success:
-        failed = [r.expectation_config.expectation_type for r in results.results if not r.success]
-        raise Exception(f"Data quality tests FAILED for {full_table_name}: {failed}")
-    
+# spark is already available in Databricks notebooks
+CATALOG = os.getenv("CATALOG", "olist_project")
+SILVER_SCHEMA = os.getenv("SILVER_SCHEMA", "silver")
+TABLE_NAME = "sellers"
+
+print(f"Config loaded: catalog={CATALOG}, silver={SILVER_SCHEMA}")
+
+full_table_name = f"{CATALOG}.{SILVER_SCHEMA}.{TABLE_NAME}"
+
+print(f"--- Running Data Quality Tests for {full_table_name} ---")
+print(f"Using Pandera schema: SilverSellersSchema")
+
+result = run_tests(spark, full_table_name)
+
+# Print results
+if result["success"]:
     print(f"--- All tests PASSED for {full_table_name} ---")
+    print(f"  Row count: {result['row_count']}")
+else:
+    print(f"--- Some tests FAILED for {full_table_name} ---")
+    print(f"  Row count: {result['row_count']}")
+    print(f"  Errors: {result['errors']}")
+    raise Exception(f"Data quality tests FAILED for {full_table_name}: {result['errors']}")

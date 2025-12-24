@@ -1,117 +1,133 @@
 # Databricks notebook source
 # Test Silver Order Payments - Validates data quality for silver order_payments table
-# Using Great Expectations for production-grade testing
+# Using Pandera for PySpark (compatible with Databricks Serverless)
 
 import os
 from dotenv import load_dotenv
-from pyspark.sql import SparkSession
-import great_expectations as gx
+import pandera.pyspark as pa
+from pandera.pyspark import DataFrameModel, Field
+import pyspark.sql.types as T
+from pyspark.sql import functions as F
 
 load_dotenv()
 
-def run_tests(spark: SparkSession, table_name: str):
-    """Run data quality tests using Great Expectations"""
+
+# --- SCHEMA DEFINITION ---
+class SilverOrderPaymentsSchema(DataFrameModel):
+    """
+    Pandera schema for silver.order_payments table.
+    Validates schema structure and data quality.
+    """
     
+    # Define columns with their types and constraints
+    order_id: T.StringType() = Field(nullable=False)  # Composite key - NOT NULL
+    payment_sequential: T.IntegerType() = Field(nullable=False)  # Composite key - NOT NULL
+    payment_type: T.StringType() = Field(nullable=False)  # NOT NULL
+    payment_installments: T.IntegerType() = Field(nullable=True)
+    payment_value: T.DecimalType(10, 2) = Field(nullable=True)
+
+    # Custom dataframe-level check for row count
+    @pa.dataframe_check
+    def min_row_count(cls, df) -> bool:
+        """Ensure DataFrame has at least 1 row."""
+        return df.count() >= 1
+
+    # Custom check for composite key uniqueness
+    @pa.dataframe_check
+    def unique_composite_key(cls, df) -> bool:
+        """Ensure (order_id, payment_sequential) is unique."""
+        total_count = df.count()
+        distinct_count = df.select("order_id", "payment_sequential").distinct().count()
+        return total_count == distinct_count
+
+    # Custom check for payment_sequential >= 1
+    @pa.dataframe_check
+    def valid_payment_sequential(cls, df) -> bool:
+        """Ensure payment_sequential >= 1."""
+        invalid_count = df.filter(F.col("payment_sequential") < 1).count()
+        return invalid_count == 0
+
+    # Custom check for payment_installments >= 1
+    @pa.dataframe_check
+    def valid_installments(cls, df) -> bool:
+        """Ensure payment_installments >= 1."""
+        invalid_count = df.filter(
+            (F.col("payment_installments").isNotNull()) & (F.col("payment_installments") < 1)
+        ).count()
+        return invalid_count == 0
+
+    # Custom check for payment_value >= 0
+    @pa.dataframe_check
+    def valid_payment_value(cls, df) -> bool:
+        """Ensure payment_value >= 0."""
+        invalid_count = df.filter(
+            (F.col("payment_value").isNotNull()) & (F.col("payment_value") < 0)
+        ).count()
+        return invalid_count == 0
+
+    # Custom check for valid payment_type values
+    @pa.dataframe_check
+    def valid_payment_type(cls, df) -> bool:
+        """Ensure payment_type is in valid set."""
+        valid_types = ["credit_card", "boleto", "voucher", "debit_card", "not_defined"]
+        invalid_count = df.filter(
+            ~F.col("payment_type").isin(valid_types)
+        ).count()
+        return invalid_count == 0
+
+
+def run_tests(spark, table_name: str) -> dict:
+    """
+    Run data quality tests using Pandera.
+    
+    Args:
+        spark: SparkSession
+        table_name: Full table name (catalog.schema.table)
+    
+    Returns:
+        dict with 'success' boolean and 'errors' details
+    """
+    # 1. Read table
     df = spark.table(table_name)
     
-    # Create ephemeral GX context
-    context = gx.get_context(mode="ephemeral")
+    # 2. Validate with Pandera schema
+    df_validated = SilverOrderPaymentsSchema.validate(check_obj=df)
     
-    # Create Spark datasource
-    datasource = context.sources.add_or_update_spark("spark_ds")
-    data_asset = datasource.add_dataframe_asset(name="order_payments")
-    batch_request = data_asset.build_batch_request(dataframe=df)
+    # 3. Collect errors from validation
+    errors = df_validated.pandera.errors
     
-    # Create expectation suite
-    suite = context.add_or_update_expectation_suite("silver_order_payments_suite")
+    # 4. Build result
+    result = {
+        "success": len(errors) == 0,
+        "errors": errors,
+        "row_count": df.count(),
+        "schema_name": "SilverOrderPaymentsSchema"
+    }
     
-    # Create validator
-    validator = context.get_validator(
-        batch_request=batch_request,
-        expectation_suite=suite
-    )
-    
-    # === ROW COUNT ===
-    validator.expect_table_row_count_to_be_between(min_value=1)
-    
-    # === SCHEMA VALIDATION ===
-    validator.expect_table_columns_to_match_set(
-        column_set=[
-            "order_id",
-            "payment_sequential",
-            "payment_type",
-            "payment_installments",
-            "payment_value"
-        ],
-        exact_match=False
-    )
-    
-    # === COMPOSITE KEY UNIQUENESS ===
-    validator.expect_compound_columns_to_be_unique(
-        column_list=["order_id", "payment_sequential"]
-    )
-    
-    # === NOT NULL ===
-    validator.expect_column_values_to_not_be_null("order_id")
-    validator.expect_column_values_to_not_be_null("payment_sequential")
-    validator.expect_column_values_to_not_be_null("payment_type")
-    
-    # === VALUE RANGE (from WHERE clause in transformation) ===
-    validator.expect_column_values_to_be_between(
-        column="payment_sequential",
-        min_value=1
-    )
-    
-    validator.expect_column_values_to_be_between(
-        column="payment_installments",
-        min_value=1
-    )
-    
-    validator.expect_column_values_to_be_between(
-        column="payment_value",
-        min_value=0
-    )
-    
-    # === VALUE SET VALIDATION ===
-    validator.expect_column_values_to_be_in_set(
-        column="payment_type",
-        value_set=[
-            "credit_card",
-            "boleto",
-            "voucher",
-            "debit_card",
-            "not_defined"
-        ]
-    )
-    
-    return validator.validate()
+    return result
 
 
 # --- ENTRYPOINT ---
-if __name__ == "__main__":
-    spark = SparkSession.builder.getOrCreate()
-    
-    CATALOG = os.getenv("CATALOG", "olist_project")
-    SILVER_SCHEMA = os.getenv("SILVER_SCHEMA", "silver")
-    TABLE_NAME = "order_payments"
-    
-    print(f"Config loaded: catalog={CATALOG}, silver={SILVER_SCHEMA}")
-    
-    full_table_name = f"{CATALOG}.{SILVER_SCHEMA}.{TABLE_NAME}"
-    
-    print(f"--- Running Data Quality Tests for {full_table_name} ---")
-    
-    results = run_tests(spark, full_table_name)
-    
-    # Print results
-    for r in results.results:
-        status = "PASSED" if r.success else "FAILED"
-        exp_type = r.expectation_config.expectation_type
-        print(f"  [{status}] {exp_type}")
-    
-    # Raise exception if any test failed
-    if not results.success:
-        failed = [r.expectation_config.expectation_type for r in results.results if not r.success]
-        raise Exception(f"Data quality tests FAILED for {full_table_name}: {failed}")
-    
+# spark is already available in Databricks notebooks
+CATALOG = os.getenv("CATALOG", "olist_project")
+SILVER_SCHEMA = os.getenv("SILVER_SCHEMA", "silver")
+TABLE_NAME = "order_payments"
+
+print(f"Config loaded: catalog={CATALOG}, silver={SILVER_SCHEMA}")
+
+full_table_name = f"{CATALOG}.{SILVER_SCHEMA}.{TABLE_NAME}"
+
+print(f"--- Running Data Quality Tests for {full_table_name} ---")
+print(f"Using Pandera schema: SilverOrderPaymentsSchema")
+
+result = run_tests(spark, full_table_name)
+
+# Print results
+if result["success"]:
     print(f"--- All tests PASSED for {full_table_name} ---")
+    print(f"  Row count: {result['row_count']}")
+else:
+    print(f"--- Some tests FAILED for {full_table_name} ---")
+    print(f"  Row count: {result['row_count']}")
+    print(f"  Errors: {result['errors']}")
+    raise Exception(f"Data quality tests FAILED for {full_table_name}: {result['errors']}")
