@@ -1,103 +1,332 @@
 version: 2
 
 models:
-  # --- 1. KIỂM TRA BẢNG CHIỀU (DIMENSION) ---
+  # ============================================================
+  # DIMENSION TABLES (SCD Type 2)
+  # ============================================================
+  
   - name: dim_customers
+    description: |
+      Customer dimension with SCD Type 2 tracking.
+      Tracks changes in customer address (zip, city, state) over time.
+      Use is_current = TRUE for current state queries.
     columns:
-      - name: customer_id
+      - name: customer_sk
+        description: "Surrogate key - unique per version (hash of customer_unique_id + valid_from)"
         tests:
           - not_null
           - unique
           
+      - name: customer_unique_id
+        description: "Natural key - unique per person"
+        tests:
+          - not_null
+          
+      - name: customer_zip_code_prefix
+        description: "Customer ZIP code prefix (5 digits)"
+        
+      - name: customer_city
+        description: "Customer city name (uppercase)"
+        
+      - name: customer_state
+        description: "Customer state code (2 letters, e.g., SP, RJ)"
+        
+      - name: geolocation_lat
+        description: "Latitude coordinate"
+        
+      - name: geolocation_lng
+        description: "Longitude coordinate"
+        
+      - name: valid_from
+        description: "SCD2: Timestamp when this version became effective"
+        tests:
+          - not_null
+          
+      - name: valid_to
+        description: "SCD2: Timestamp when this version expired (NULL = current)"
+        
+      - name: is_current
+        description: "SCD2: TRUE if this is the current version"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+
   - name: dim_products
+    description: |
+      Product dimension with SCD Type 2 tracking.
+      Tracks changes in product category over time.
+      Use is_current = TRUE for current state queries.
     columns:
-      - name: product_id
+      - name: product_sk
+        description: "Surrogate key - unique per version"
         tests:
           - not_null
           - unique
+          
+      - name: product_id
+        description: "Natural key - unique per product"
+        tests:
+          - not_null
+          
+      - name: product_category_name
+        description: "Product category name (translated to English)"
+        
+      - name: product_name_length
+        description: "Length of product name in characters"
+        
+      - name: product_description_length
+        description: "Length of product description in characters"
+        
+      - name: product_photos_qty
+        description: "Number of product photos"
+        
+      - name: product_weight_g
+        description: "Product weight in grams"
+        
+      - name: product_length_cm
+        description: "Product length in centimeters"
+        
+      - name: product_height_cm
+        description: "Product height in centimeters"
+        
+      - name: product_width_cm
+        description: "Product width in centimeters"
+        
+      - name: valid_from
+        description: "SCD2: Timestamp when this version became effective"
+        tests:
+          - not_null
+          
+      - name: valid_to
+        description: "SCD2: Timestamp when this version expired (NULL = current)"
+        
+      - name: is_current
+        description: "SCD2: TRUE if this is the current version"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
 
   - name: dim_sellers
+    description: |
+      Seller dimension with SCD Type 2 tracking.
+      Tracks changes in seller address over time.
+      Use is_current = TRUE for current state queries.
     columns:
+      - name: seller_sk
+        description: "Surrogate key - unique per version"
+        tests:
+          - not_null
+          - unique
+          
       - name: seller_id
+        description: "Natural key - unique per seller"
         tests:
           - not_null
-          - unique
-
-  - name: dim_datetimes
-    columns:
-      - name: date_id
+          
+      - name: seller_zip_code_prefix
+        description: "Seller ZIP code prefix"
+        
+      - name: seller_city
+        description: "Seller city name"
+        
+      - name: seller_state
+        description: "Seller state code"
+        
+      - name: geolocation_lat
+        description: "Latitude coordinate"
+        
+      - name: geolocation_lng
+        description: "Longitude coordinate"
+        
+      - name: valid_from
+        description: "SCD2: Timestamp when this version became effective"
         tests:
           - not_null
-          - unique
+          
+      - name: valid_to
+        description: "SCD2: Timestamp when this version expired (NULL = current)"
+        
+      - name: is_current
+        description: "SCD2: TRUE if this is the current version"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
 
-  # --- 2. KIỂM TRA BẢNG SỰ KIỆN (FACT) ---
+  # ============================================================
+  # FACT TABLES
+  # ============================================================
+  
   - name: fct_order_items
+    description: |
+      Fact table containing order line items.
+      Grain: One row per order item.
+      Join with dimensions using natural keys and is_current = TRUE for current state.
     columns:
       - name: order_id
+        description: "Order identifier"
+        tests:
+          - not_null
+          
+      - name: order_item_id
+        description: "Sequential item number within order"
         tests:
           - not_null
           
       - name: product_id
+        description: "Product identifier (FK to dim_products)"
         tests:
           - not_null
-          - relationships:
-              to: ref('dim_products')
-              field: product_id
-              
-      - name: customer_id
-        tests:
-          - not_null
-          - relationships:
-              to: ref('dim_customers')
-              field: customer_id
-              
+          
       - name: seller_id
+        description: "Seller identifier (FK to dim_sellers)"
         tests:
           - not_null
-          - relationships:
-              to: ref('dim_sellers')
-              field: seller_id
+          
+      - name: customer_unique_id
+        description: "Customer identifier (FK to dim_customers)"
+        tests:
+          - not_null
+               
+      - name: order_purchase_timestamp
+        description: "Timestamp when order was placed"
+        tests:
+          - not_null
+          
+      - name: order_delivered_customer_date
+        description: "Timestamp when order was delivered to customer"
+        
+      - name: order_estimated_delivery_date
+        description: "Estimated delivery timestamp shown to customer at purchase"
+        
+      - name: shipping_limit_date
+        description: "Seller shipping limit timestamp"
               
-      - name: order_date
+      - name: price
+        description: "Item price in BRL"
         tests:
           - not_null
-          - relationships:
-              to: ref('dim_datetimes')
-              field: date_id
+          
+      - name: freight_value
+        description: "Shipping cost in BRL"
+        tests:
+          - not_null
 
   - name: fct_order_payments
+    description: |
+      Fact table containing payment information per order.
+      Grain: One row per payment transaction.
     columns:
       - name: order_id
+        description: "Order identifier"
         tests:
           - not_null
-      - name: customer_id
-        tests:
-          - relationships:
-              to: ref('dim_customers')
-              field: customer_id
-      - name: order_date
+          
+      - name: payment_sequential
+        description: "Payment sequence number within order"
         tests:
           - not_null
-          - relationships:
-              to: ref('dim_datetimes')
-              field: date_id
-              
+          
+      - name: customer_unique_id
+        description: "Customer identifier (FK to dim_customers)"
+        tests:
+          - not_null
+               
+      - name: order_purchase_timestamp
+        description: "Timestamp when order was placed"
+        tests:
+          - not_null
+          
+      - name: payment_type
+        description: "Payment method (credit_card, boleto, voucher, debit_card)"
+        tests:
+          - not_null
+          
+      - name: payment_installments
+        description: "Number of payment installments"
+        
+      - name: payment_value
+        description: "Payment amount in BRL"
+        tests:
+          - not_null
+               
   - name: fct_order_reviews
+    description: |
+      Fact table containing customer reviews.
+      Grain: One row per review.
     columns:
       - name: review_id
+        description: "Review identifier"
         tests:
           - not_null
+          
       - name: order_id
+        description: "Order identifier"
         tests:
           - not_null
-      - name: customer_id
-        tests:
-          - relationships:
-              to: ref('dim_customers')
-              field: customer_id
-      - name: review_date
+          
+      - name: customer_unique_id
+        description: "Customer identifier (FK to dim_customers)"
         tests:
           - not_null
-          - relationships:
-              to: ref('dim_datetimes')
-              field: date_id
+               
+      - name: review_creation_date
+        description: "Timestamp when review was created"
+        tests:
+          - not_null
+          
+      - name: review_answer_timestamp
+        description: "Timestamp when review was answered"
+        
+      - name: review_comment_message
+        description: "Review comment text"
+        
+      - name: review_score
+        description: "Review score (1-5)"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+
+  # ============================================================
+  # CUSTOMER SEGMENTS (ML OUTPUT) - COMMENTED OUT
+  # ============================================================
+  
+  # - name: dim_customer_segments
+  #   description: "Customer segments based on RFM analysis and K-Means clustering"
+  #   columns:
+  #     - name: customer_unique_id
+  #       description: "Unique customer identifier"
+  #       tests:
+  #         - unique
+  #         - not_null
+  #     - name: recency_days
+  #       description: "Days since last purchase"
+  #       tests:
+  #         - not_null
+  #     - name: frequency
+  #       description: "Number of unique orders"
+  #       tests:
+  #         - not_null
+  #     - name: monetary
+  #       description: "Total spending amount (BRL)"
+  #       tests:
+  #         - not_null
+  #     - name: cluster_id
+  #       description: "Cluster ID from K-Means (0-3)"
+  #       tests:
+  #         - not_null
+  #         - accepted_values:
+  #             values: [0, 1, 2, 3]
+  #     - name: segment_name
+  #       description: "Human-readable segment name"
+  #       tests:
+  #         - not_null
+  #         - accepted_values:
+  #             values: ['New/Low Spenders', 'Big Spenders', 'At Risk', 'Loyal Customers']
+  #     - name: processed_timestamp
+  #       description: "Timestamp when segmentation was processed"
+  #       tests:
+  #         - not_null

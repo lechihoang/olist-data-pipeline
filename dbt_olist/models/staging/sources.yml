@@ -21,3 +21,11 @@ sources:
       - name: order_reviews
       - name: products
       - name: sellers
+
+  # ML schema - output from ML pipeline
+  - name: ml
+    database: "{{ var('catalog') }}"
+    schema: ml
+    tables:
+      - name: customer_segments
+        description: "Customer segments from K-Means clustering on RFM features"
