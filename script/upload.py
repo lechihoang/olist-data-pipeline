@@ -1,42 +1,41 @@
-"""
-Script upload file CSV lên Databricks Unity Catalog Volume.
-
-Usage:
-    python script/upload.py
-"""
-
 import os
+import logging
+from dotenv import load_dotenv
 from databricks.sdk import WorkspaceClient
 
-# Configuration
-LOCAL_DATA_FOLDER = "data"
+load_dotenv()
 
-CATALOG = "olist_project"
-STAGING_SCHEMA = "staging"
-LANDING_VOLUME = "landing_zone"
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s | %(levelname)-8s | %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger(__name__)
 
-# File mapping: local filename -> target subfolder trong Volume
+LOCAL_DATA_FOLDER = os.getenv("DATA_FOLDER", "data")
+
+CATALOG = os.getenv("CATALOG", "olist_project")
+STAGING_SCHEMA = os.getenv("STAGING_SCHEMA", "staging")
+LANDING_VOLUME = os.getenv("LANDING_VOLUME", "landing_zone")
+
 FILE_MAPPING = {
-    # Dynamic data
-    "orders.csv": "orders",
-    "customers.csv": "customers",
-    "order_items.csv": "order_items",
-    "order_payments.csv": "order_payments",
-    "order_reviews.csv": "order_reviews",
-    "products.csv": "products",
-    "sellers.csv": "sellers",
-    # Static data
+    "order.csv": "order",
+    "customer.csv": "customer",
+    "order_item.csv": "order_item",
+    "order_payment.csv": "order_payment",
+    "order_review.csv": "order_review",
+    "product.csv": "product",
+    "seller.csv": "seller",
     "geolocation.csv": "static",
     "product_category_name_translation.csv": "static"
 }
 
 
 def upload_file_to_volume(w: WorkspaceClient, local_path: str, volume_path: str):
-    """Upload một file lên Databricks Volume"""
     filename = os.path.basename(local_path)
     full_volume_path = f"{volume_path}/{filename}"
 
-    print(f"  Uploading '{filename}' to '{full_volume_path}'...")
+    logger.info(f"  Uploading '{filename}' to '{full_volume_path}'...")
     
     try:
         with open(local_path, "rb") as f:
@@ -45,24 +44,23 @@ def upload_file_to_volume(w: WorkspaceClient, local_path: str, volume_path: str)
                 contents=f,
                 overwrite=True
             )
-        print(f"  ✅ Upload thành công!")
+        logger.info(f"  Upload successful!")
         return True
         
     except Exception as e:
-        print(f"  ❌ Lỗi upload file: {e}")
+        logger.error(f"  Upload failed: {e}")
         return False
 
 
 def main():
-    print("="*50)
-    print("  UPLOADING DATA FILES TO DATABRICKS")
-    print("="*50)
-    print()
+    logger.info("=" * 50)
+    logger.info("  UPLOADING DATA FILES TO DATABRICKS")
+    logger.info("=" * 50)
     
-    print("Đang kết nối với Databricks workspace...")
+    logger.info("Connecting to Databricks workspace...")
     w = WorkspaceClient()
     current_user = w.current_user.me().user_name
-    print(f"Kết nối thành công với tư cách: {current_user}\n")
+    logger.info(f"Connected as: {current_user}")
     
     file_count = 0
     for filename, target_dir in FILE_MAPPING.items():
@@ -73,12 +71,11 @@ def main():
             if upload_file_to_volume(w, local_file_path, target_volume_path):
                 file_count += 1
         else:
-            print(f"  ⚠️ File không tồn tại: {local_file_path}")
+            logger.warning(f"  File not found: {local_file_path}")
     
-    print()
-    print("="*50)
-    print(f"  HOÀN TẤT! Đã upload {file_count}/{len(FILE_MAPPING)} file")
-    print("="*50)
+    logger.info("=" * 50)
+    logger.info(f"  COMPLETED! Uploaded {file_count}/{len(FILE_MAPPING)} files")
+    logger.info("=" * 50)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,23 @@
+# Tên file: dbt_gold/models/staging/sources.yml
+# Mục đích: "Đăng ký" các bảng Tầng Silver (nguồn)
+
+version: 2
+
+sources:
+  # Đây là "nhóm" nguồn, bạn có thể đặt tên tùy ý
+  - name: olist_silver
+
+    # ⭐️ Sử dụng dbt vars thay vì hardcode
+    database: "{{ var('catalog') }}"
+    schema: "{{ var('silver_schema') }}"
+
+    # Liệt kê các bảng Silver "sạch" của bạn
+    tables:
+      - name: customer
+      - name: geolocation
+      - name: order
+      - name: order_item
+      - name: order_payment
+      - name: order_review
+      - name: product
+      - name: seller

@@ -1,0 +1,33 @@
+name: 'dbt_gold'
+version: '1.8.0'
+config-version: 2
+
+profile: 'dbt_gold'
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# Variables với default values
+vars:
+  catalog: olist_project
+  silver_schema: silver
+  gold_schema: gold
+
+models:
+  dbt_gold:
+    staging:
+      +materialized: view
+    
+    intermediate:
+      +materialized: ephemeral
+    
+    gold:
+      +materialized: table

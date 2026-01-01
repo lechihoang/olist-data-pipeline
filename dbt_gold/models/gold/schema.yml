@@ -1,0 +1,392 @@
+version: 2
+
+models:
+  # ============================================================
+  # DIMENSION TABLES (SCD Type 2 with Incremental Processing)
+  # ============================================================
+  
+  - name: dim_customer
+    description: |
+      Customer dimension with SCD Type 2 tracking (Incremental).
+      Tracks changes in customer address (zip, city, state) over time.
+      Use is_current = TRUE for current state queries.
+      
+      Materialization: Incremental (MERGE strategy)
+      Source: snapshot_customer
+    columns:
+      - name: customer_sk
+        description: "Surrogate key - unique per version (hash of customer_unique_id + valid_from)"
+        tests:
+          - not_null
+          - unique
+          
+      - name: customer_unique_id
+        description: "Natural key - unique per person"
+        tests:
+          - not_null
+          
+      - name: customer_zip_code_prefix
+        description: "Customer ZIP code prefix (5 digits)"
+        
+      - name: customer_city
+        description: "Customer city name (uppercase)"
+        
+      - name: customer_state
+        description: "Customer state code (2 letters, e.g., SP, RJ)"
+        
+      - name: geolocation_lat
+        description: "Latitude coordinate"
+        
+      - name: geolocation_lng
+        description: "Longitude coordinate"
+        
+      - name: valid_from
+        description: "SCD2: Timestamp when this version became effective"
+        tests:
+          - not_null
+          
+      - name: valid_to
+        description: "SCD2: Timestamp when this version expired (NULL = current)"
+        
+      - name: is_current
+        description: "SCD2: TRUE if this is the current version"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+              
+      - name: dbt_updated_at
+        description: "Metadata: Timestamp when this record was last updated by dbt snapshot"
+        tests:
+          - not_null
+
+  - name: dim_product
+    description: |
+      Product dimension with SCD Type 2 tracking (Incremental).
+      Tracks changes in product category over time.
+      Use is_current = TRUE for current state queries.
+      
+      Materialization: Incremental (MERGE strategy)
+      Source: snapshot_product
+    columns:
+      - name: product_sk
+        description: "Surrogate key - unique per version"
+        tests:
+          - not_null
+          - unique
+          
+      - name: product_id
+        description: "Natural key - unique per product"
+        tests:
+          - not_null
+          
+      - name: product_category_name
+        description: "Product category name (translated to English)"
+        
+      - name: product_name_length
+        description: "Length of product name in characters"
+        
+      - name: product_description_length
+        description: "Length of product description in characters"
+        
+      - name: product_photos_qty
+        description: "Number of product photos"
+        
+      - name: product_weight_g
+        description: "Product weight in grams"
+        
+      - name: product_length_cm
+        description: "Product length in centimeters"
+        
+      - name: product_height_cm
+        description: "Product height in centimeters"
+        
+      - name: product_width_cm
+        description: "Product width in centimeters"
+        
+      - name: valid_from
+        description: "SCD2: Timestamp when this version became effective"
+        tests:
+          - not_null
+          
+      - name: valid_to
+        description: "SCD2: Timestamp when this version expired (NULL = current)"
+        
+      - name: is_current
+        description: "SCD2: TRUE if this is the current version"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+              
+      - name: dbt_updated_at
+        description: "Metadata: Timestamp when this record was last updated by dbt snapshot"
+        tests:
+          - not_null
+
+  - name: dim_seller
+    description: |
+      Seller dimension with SCD Type 2 tracking (Incremental).
+      Tracks changes in seller address over time.
+      Use is_current = TRUE for current state queries.
+      
+      Materialization: Incremental (MERGE strategy)
+      Source: snapshot_seller
+    columns:
+      - name: seller_sk
+        description: "Surrogate key - unique per version"
+        tests:
+          - not_null
+          - unique
+          
+      - name: seller_id
+        description: "Natural key - unique per seller"
+        tests:
+          - not_null
+          
+      - name: seller_zip_code_prefix
+        description: "Seller ZIP code prefix"
+        
+      - name: seller_city
+        description: "Seller city name"
+        
+      - name: seller_state
+        description: "Seller state code"
+        
+      - name: geolocation_lat
+        description: "Latitude coordinate"
+        
+      - name: geolocation_lng
+        description: "Longitude coordinate"
+        
+      - name: valid_from
+        description: "SCD2: Timestamp when this version became effective"
+        tests:
+          - not_null
+          
+      - name: valid_to
+        description: "SCD2: Timestamp when this version expired (NULL = current)"
+        
+      - name: is_current
+        description: "SCD2: TRUE if this is the current version"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+              
+      - name: dbt_updated_at
+        description: "Metadata: Timestamp when this record was last updated by dbt snapshot"
+        tests:
+          - not_null
+
+  - name: dim_order
+    description: |
+      Order dimension with SCD Type 2 tracking (Incremental).
+      Tracks changes in order_status over time (created → approved → shipped → delivered).
+      
+      Grain: One row per order VERSION (order_id + valid_from is unique).
+      Use is_current = TRUE for current state queries.
+      Use WHERE order_id = 'xxx' ORDER BY valid_from for order status history.
+      
+      Materialization: Incremental (MERGE strategy)
+      Source: snapshot_order
+      
+      Contains pre-computed delivery metrics for Power BI performance.
+    columns:
+      - name: order_sk
+        description: "Surrogate key - unique per version (hash of order_id + valid_from)"
+        tests:
+          - not_null
+          - unique
+          
+      - name: order_id
+        description: "Natural key - unique per order"
+        tests:
+          - not_null
+          
+      - name: customer_unique_id
+        description: "Foreign key to dim_customer (use is_current=TRUE for current state)"
+        tests:
+          - not_null
+          
+      - name: order_status
+        description: "Order status - TRACKED BY SCD2 (delivered, shipped, canceled, unavailable, invoiced, processing, created, approved)"
+        tests:
+          - not_null
+          
+      - name: order_purchase_timestamp
+        description: "Timestamp when order was placed"
+        tests:
+          - not_null
+          
+      - name: order_approved_at
+        description: "Timestamp when payment was approved"
+        
+      - name: order_delivered_carrier_date
+        description: "Timestamp when order was handed to carrier"
+        
+      - name: order_delivered_customer_date
+        description: "Timestamp when order was delivered to customer"
+        
+      - name: order_estimated_delivery_date
+        description: "Estimated delivery timestamp shown to customer at purchase"
+        
+      # Pre-computed metrics for Power BI
+      - name: delivery_days
+        description: "Days from purchase to customer delivery (NULL if not delivered)"
+        
+      - name: shipping_days
+        description: "Days from approval to carrier handoff (NULL if not shipped)"
+        
+      - name: carrier_days
+        description: "Days from carrier handoff to customer delivery (NULL if not delivered)"
+        
+      - name: approval_hours
+        description: "Hours from purchase to payment approval (NULL if not approved)"
+        
+      - name: is_on_time
+        description: "TRUE if delivered on or before estimated date, FALSE if late, NULL if not delivered"
+        
+      - name: is_delivered
+        description: "TRUE if order_status = 'delivered', FALSE otherwise"
+        tests:
+          - not_null
+          
+      # SCD Type 2 Columns
+      - name: valid_from
+        description: "SCD2: Timestamp when this version became effective"
+        tests:
+          - not_null
+          
+      - name: valid_to
+        description: "SCD2: Timestamp when this version expired (NULL = current)"
+        
+      - name: is_current
+        description: "SCD2: TRUE if this is the current version"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+              
+      - name: dbt_updated_at
+        description: "Metadata: Timestamp when this record was last updated by dbt snapshot"
+        tests:
+          - not_null
+
+  # ============================================================
+  # FACT TABLES (Incremental Processing)
+  # ============================================================
+  
+  - name: fct_order_item
+    description: |
+      Fact table containing order line item (Incremental).
+      Grain: One row per order item.
+      
+      Join with dim_order using order_id to access:
+      - customer_unique_id (then join to dim_customer)
+      - order timestamps and delivery metrics
+      
+      Join with dim_product and dim_seller using natural keys.
+      For SCD2 dimensions, filter with is_current = TRUE for current state.
+    columns:
+      - name: order_id
+        description: "Order identifier (FK to dim_order)"
+        tests:
+          - not_null
+          
+      - name: order_item_id
+        description: "Sequential item number within order"
+        tests:
+          - not_null
+          
+      - name: product_id
+        description: "Product identifier (FK to dim_product)"
+        tests:
+          - not_null
+          
+      - name: seller_id
+        description: "Seller identifier (FK to dim_seller)"
+        tests:
+          - not_null
+               
+      - name: shipping_limit_date
+        description: "Seller shipping limit timestamp"
+              
+      - name: price
+        description: "Item price in BRL"
+        tests:
+          - not_null
+          
+      - name: freight_value
+        description: "Shipping cost in BRL"
+        tests:
+          - not_null
+
+  - name: fct_order_payment
+    description: |
+      Fact table containing payment information per order (Incremental).
+      Grain: One row per payment transaction.
+      
+      Join with dim_order using order_id to access:
+      - customer_unique_id (then join to dim_customer)
+      - order timestamps
+    columns:
+      - name: order_id
+        description: "Order identifier (FK to dim_order)"
+        tests:
+          - not_null
+          
+      - name: payment_sequential
+        description: "Payment sequence number within order"
+        tests:
+          - not_null
+          
+      - name: payment_type
+        description: "Payment method (credit_card, boleto, voucher, debit_card)"
+        tests:
+          - not_null
+          
+      - name: payment_installments
+        description: "Number of payment installments"
+        
+      - name: payment_value
+        description: "Payment amount in BRL"
+        tests:
+          - not_null
+               
+  - name: fct_order_review
+    description: |
+      Fact table containing customer review (Incremental).
+      Grain: One row per review.
+      
+      Join with dim_order using order_id to access:
+      - customer_unique_id (then join to dim_customer)
+      - order timestamps and delivery metrics
+    columns:
+      - name: review_id
+        description: "Review identifier"
+        tests:
+          - not_null
+          
+      - name: order_id
+        description: "Order identifier (FK to dim_order)"
+        tests:
+          - not_null
+               
+      - name: review_creation_date
+        description: "Timestamp when review was created"
+        tests:
+          - not_null
+          
+      - name: review_answer_timestamp
+        description: "Timestamp when review was answered"
+        
+      - name: review_comment_message
+        description: "Review comment text"
+        
+      - name: review_score
+        description: "Review score (1-5)"
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
