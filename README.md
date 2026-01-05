@@ -40,11 +40,11 @@ CSV Files --> Volume --> Bronze --> Silver --> Gold --> BI Tools
 
 The Bronze layer ingests raw CSV files into Delta tables with minimal transformation, preserving the original data.
 
-**Processing Pattern:**
-- Auto Loader with `trigger(availableNow=True)` for incremental batch ingestion
-- Schema enforcement using JSON schema definitions
-- Metadata columns added: `_source_file`, `_ingest_timestamp`
-- Checkpoints track processed files to avoid reprocessing
+**What it does:**
+- Loads CSV files from landing zone into Delta tables (incremental or full load)
+- Preserves original data as-is, only adds tracking metadata (source file, ingestion time)
+- Enforces schema from YAML definitions to catch data type issues early
+- Tracks processed files to avoid duplicate ingestion
 
 **Tables:**
 
@@ -64,10 +64,11 @@ The Bronze layer ingests raw CSV files into Delta tables with minimal transforma
 
 The Silver layer applies data quality rules, standardization, and enrichment through lookups.
 
-**Processing Pattern:**
-- Incremental batch using `readStream` with `trigger(availableNow=True)`
-- Delta Lake MERGE for upsert operations (insert new, update existing)
-- Checkpoints track processed records
+**What it does:**
+- Cleans: removes duplicates, standardizes text (uppercase city/state), fixes typos
+- Enriches: joins with lookup tables (geolocation coordinates, category translations)
+- Validates: enforces business rules (price >= 0, score 1-5, valid date sequences)
+- Processes incrementally with upsert logic (insert new records, update existing ones)
 
 **Tables:**
 
@@ -86,9 +87,10 @@ The Silver layer applies data quality rules, standardization, and enrichment thr
 
 The Gold layer implements a Star Schema optimized for analytics and BI tools.
 
-**Processing Pattern:**
-- dbt snapshots for SCD Type 2 change tracking
-- dbt incremental models for efficient updates
+**What it does:**
+- Builds dimension tables with SCD Type 2 for historical tracking
+- Builds fact tables for transactional data (orders, payments, reviews)
+- Pre-computes metrics for BI performance optimization
 
 **Dimension Tables (SCD Type 2):**
 
@@ -108,6 +110,15 @@ SCD Type 2 columns: `valid_from`, `valid_to`, `is_current`
 | fct_order_item | Order line items containing price, freight_value, and shipping_limit_date. Grain: one row per item. |
 | fct_order_payment | Payment transactions with payment_type, installments, and payment_value. Grain: one row per payment. |
 | fct_order_review | Customer reviews with review_score (1-5), timestamps, and comment text. Grain: one row per review. |
+
+### Use Cases
+
+The Gold layer data serves two main purposes:
+
+| Use Case | Description |
+|----------|-------------|
+| **Business Intelligence** | Powers dashboards in Power BI for sales analytics, customer insights, and operational metrics |
+| **Machine Learning** | Serves as feature source for ML models (e.g., Customer Segmentation in `notebook/customer_segmentation.ipynb`) |
 
 ## Data Model
 
@@ -146,22 +157,22 @@ brazilian-e-commerce-elt/
 ## Key Features
 
 **Incremental Processing**
-- Auto Loader tracks processed files via checkpoints
-- Delta Lake MERGE enables efficient upserts
-- dbt incremental models process only new/changed data
+- Tracks processed files to avoid reprocessing
+- Upserts new/changed records efficiently
+- Processes only new data in each pipeline run
 
 **Data Quality**
-- Pandera schema validation for Bronze and Silver layers
-- dbt built-in tests: unique, not_null, accepted_values, relationships
-- Custom singular tests for business rules validation
+- Schema validation at Bronze and Silver layers
+- Built-in tests for uniqueness, null checks, and valid values
+- Custom business rules validation
 
 **Change Data Capture**
-- SCD Type 2 implemented via dbt snapshots
-- Full history tracking for customer, product, seller, and order status changes
-- `is_current` flag for easy current-state queries
+- SCD Type 2 for full history tracking
+- Tracks changes in customer, product, seller, and order status over time
+- Easy current-state queries with is_current flag
 
 **Data Governance**
-- Unity Catalog for centralized metadata management
+- Centralized metadata management with Unity Catalog
 - Organized schemas: bronze, silver, gold, staging
 - Volume-based file management with access controls
 
@@ -170,7 +181,7 @@ brazilian-e-commerce-elt/
 ### Prerequisites
 
 - Databricks workspace with Unity Catalog enabled
-- Databricks CLI configured
+- Databricks CLI installed and configured
 - Python 3.10+
 
 ### Installation
@@ -181,18 +192,45 @@ git clone https://github.com/yourusername/brazilian-e-commerce-elt.git
 cd brazilian-e-commerce-elt
 ```
 
-2. Run the setup script in Databricks SQL Editor:
-```sql
--- Execute script/setup.sql to create catalog, schemas, and volumes
+2. Configure Databricks CLI:
+```bash
+# Install Databricks CLI
+pip install databricks-cli
+
+# Configure authentication
+databricks configure --token
+```
+When prompted:
+- **Databricks Host**: Copy from your workspace URL (e.g., `https://dbc-xxxxx.cloud.databricks.com`)
+- **Token**: Generate at User Settings → Developer → Access Tokens → Generate New Token
+
+3. Create environment file:
+```bash
+cp .env.example .env
+# Edit .env if you want to change default catalog/schema names
 ```
 
-3. Upload data files:
+4. Run the setup script in Databricks SQL Editor to create catalog, schemas, and volumes:
+```sql
+CREATE CATALOG IF NOT EXISTS olist_project;
+USE CATALOG olist_project;
+
+CREATE SCHEMA IF NOT EXISTS bronze;
+CREATE SCHEMA IF NOT EXISTS silver;
+CREATE SCHEMA IF NOT EXISTS gold;
+CREATE SCHEMA IF NOT EXISTS staging;
+
+CREATE VOLUME IF NOT EXISTS staging.lakehouse;
+CREATE VOLUME IF NOT EXISTS staging.checkpoints;
+```
+
+5. Upload data files:
 ```bash
 pip install databricks-sdk python-dotenv
 python script/upload.py
 ```
 
-4. Deploy and run the pipeline:
+6. Deploy and run the pipeline:
 ```bash
 databricks bundle deploy
 databricks bundle run olist_pipeline_job

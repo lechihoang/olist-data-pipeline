@@ -7,7 +7,6 @@ silver_sum AS (
     FROM {{ source('olist_silver', 'order_payment') }} op
     INNER JOIN {{ source('olist_silver', 'order') }} o
         ON op.order_id = o.order_id
-    WHERE o.order_status IN ('delivered', 'shipped')
 )
 SELECT
     g.total_value AS gold_total_payment_value,

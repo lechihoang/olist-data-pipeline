@@ -42,93 +42,93 @@ resources:
         - task_key: run_bronze_order
           description: "Nạp file 'order' từ Volume vào bảng bronze.order_raw"
           notebook_task:
-            notebook_path: src/task/bronze/bronze.py
+            notebook_path: task/bronze/bronze.py
             base_parameters:
               source_dir_name: "order"
-              target_table_name: "order_raw"
-              schema_base_path: "${workspace.file_path}/src/schema"
+              target_table_name: "order"
+              schema_base_path: "${workspace.file_path}/schema"
           environment_key: "Default"
 
         - task_key: run_bronze_customer
           description: "Nạp file 'customer' vào bảng bronze.customer_raw"
           notebook_task:
-            notebook_path: src/task/bronze/bronze.py
+            notebook_path: task/bronze/bronze.py
             base_parameters:
               source_dir_name: "customer"
-              target_table_name: "customer_raw"
-              schema_base_path: "${workspace.file_path}/src/schema"
+              target_table_name: "customer"
+              schema_base_path: "${workspace.file_path}/schema"
           environment_key: "Default"
 
         - task_key: run_bronze_order_item
           description: "Nạp file 'order_item' vào bảng bronze.order_item_raw"
           notebook_task:
-            notebook_path: src/task/bronze/bronze.py
+            notebook_path: task/bronze/bronze.py
             base_parameters:
               source_dir_name: "order_item"
-              target_table_name: "order_item_raw"
-              schema_base_path: "${workspace.file_path}/src/schema"
+              target_table_name: "order_item"
+              schema_base_path: "${workspace.file_path}/schema"
           environment_key: "Default"
 
         - task_key: run_bronze_order_payment
           description: "Nạp file 'order_payment' vào bảng bronze.order_payment_raw"
           notebook_task:
-            notebook_path: src/task/bronze/bronze.py
+            notebook_path: task/bronze/bronze.py
             base_parameters:
               source_dir_name: "order_payment"
-              target_table_name: "order_payment_raw"
-              schema_base_path: "${workspace.file_path}/src/schema"
+              target_table_name: "order_payment"
+              schema_base_path: "${workspace.file_path}/schema"
           environment_key: "Default"
 
         - task_key: run_bronze_product
           description: "Nạp file 'product' vào bảng bronze.product_raw"
           notebook_task:
-            notebook_path: src/task/bronze/bronze.py
+            notebook_path: task/bronze/bronze.py
             base_parameters:
               source_dir_name: "product"
-              target_table_name: "product_raw"
-              schema_base_path: "${workspace.file_path}/src/schema"
+              target_table_name: "product"
+              schema_base_path: "${workspace.file_path}/schema"
           environment_key: "Default"
 
         - task_key: run_bronze_seller
           description: "Nạp file 'seller' vào bảng bronze.seller_raw"
           notebook_task:
-            notebook_path: src/task/bronze/bronze.py
+            notebook_path: task/bronze/bronze.py
             base_parameters:
               source_dir_name: "seller"
-              target_table_name: "seller_raw"
-              schema_base_path: "${workspace.file_path}/src/schema"
+              target_table_name: "seller"
+              schema_base_path: "${workspace.file_path}/schema"
           environment_key: "Default"
 
         - task_key: run_bronze_geolocation
           description: "Nạp file 'geolocation' vào bảng bronze.geolocation_raw (static data)"
           notebook_task:
-            notebook_path: src/task/bronze/bronze_static.py
+            notebook_path: task/bronze/bronze_static.py
             base_parameters:
               source_dir_name: "static"
               source_file_name: "geolocation.csv"
-              target_table_name: "geolocation_raw"
-              schema_base_path: "${workspace.file_path}/src/schema"
+              target_table_name: "geolocation"
+              schema_base_path: "${workspace.file_path}/schema"
           environment_key: "Default"
 
         - task_key: run_bronze_order_review
           description: "Nạp file 'order_review' vào bảng bronze.order_review_raw"
           notebook_task:
-            notebook_path: src/task/bronze/bronze.py
+            notebook_path: task/bronze/bronze.py
             base_parameters:
               source_dir_name: "order_review"
-              target_table_name: "order_review_raw"
-              schema_base_path: "${workspace.file_path}/src/schema"
+              target_table_name: "order_review"
+              schema_base_path: "${workspace.file_path}/schema"
           environment_key: "Default"
 
         - task_key: run_bronze_product_translation
           description: "Nạp file 'product_category_name_translation' (static data)"
           notebook_task:
-            notebook_path: src/task/bronze/bronze_static.py
+            notebook_path: task/bronze/bronze_static.py
             base_parameters:
               source_dir_name: "static"
               source_file_name: "product_category_name_translation.csv"
-              target_table_name: "product_category_name_translation_raw"
-              schema_base_path: "${workspace.file_path}/src/schema"
+              target_table_name: "product_category_translation"
+              schema_base_path: "${workspace.file_path}/schema"
           environment_key: "Default"
 
         # -----------------------------------------------
@@ -139,7 +139,7 @@ resources:
           depends_on:
             - task_key: run_bronze_order
           notebook_task:
-            notebook_path: src/test/bronze/test_bronze_order.py
+            notebook_path: test/bronze/test_bronze_order.py
           environment_key: "Default"
 
         - task_key: test_bronze_customer
@@ -147,7 +147,7 @@ resources:
           depends_on:
             - task_key: run_bronze_customer
           notebook_task:
-            notebook_path: src/test/bronze/test_bronze_customer.py
+            notebook_path: test/bronze/test_bronze_customer.py
           environment_key: "Default"
 
         - task_key: test_bronze_order_item
@@ -155,7 +155,7 @@ resources:
           depends_on:
             - task_key: run_bronze_order_item
           notebook_task:
-            notebook_path: src/test/bronze/test_bronze_order_item.py
+            notebook_path: test/bronze/test_bronze_order_item.py
           environment_key: "Default"
 
         - task_key: test_bronze_order_payment
@@ -163,7 +163,7 @@ resources:
           depends_on:
             - task_key: run_bronze_order_payment
           notebook_task:
-            notebook_path: src/test/bronze/test_bronze_order_payment.py
+            notebook_path: test/bronze/test_bronze_order_payment.py
           environment_key: "Default"
 
         - task_key: test_bronze_product
@@ -171,7 +171,7 @@ resources:
           depends_on:
             - task_key: run_bronze_product
           notebook_task:
-            notebook_path: src/test/bronze/test_bronze_product.py
+            notebook_path: test/bronze/test_bronze_product.py
           environment_key: "Default"
 
         - task_key: test_bronze_seller
@@ -179,7 +179,7 @@ resources:
           depends_on:
             - task_key: run_bronze_seller
           notebook_task:
-            notebook_path: src/test/bronze/test_bronze_seller.py
+            notebook_path: test/bronze/test_bronze_seller.py
           environment_key: "Default"
 
         - task_key: test_bronze_geolocation
@@ -187,7 +187,7 @@ resources:
           depends_on:
             - task_key: run_bronze_geolocation
           notebook_task:
-            notebook_path: src/test/bronze/test_bronze_geolocation.py
+            notebook_path: test/bronze/test_bronze_geolocation.py
           environment_key: "Default"
 
         - task_key: test_bronze_order_review
@@ -195,7 +195,7 @@ resources:
           depends_on:
             - task_key: run_bronze_order_review
           notebook_task:
-            notebook_path: src/test/bronze/test_bronze_order_review.py
+            notebook_path: test/bronze/test_bronze_order_review.py
           environment_key: "Default"
 
         - task_key: test_bronze_product_translation
@@ -203,7 +203,7 @@ resources:
           depends_on:
             - task_key: run_bronze_product_translation
           notebook_task:
-            notebook_path: src/test/bronze/test_bronze_product_translation.py
+            notebook_path: test/bronze/test_bronze_product_translation.py
           environment_key: "Default"
 
         # -----------------------------------------------
@@ -214,7 +214,7 @@ resources:
           depends_on: 
             - task_key: test_bronze_geolocation
           notebook_task:
-            notebook_path: src/task/silver/silver_geolocation.py
+            notebook_path: task/silver/silver_geolocation.py
             base_parameters:
               bronze_table_input: "geolocation_raw"
               silver_table_output: "geolocation"
@@ -226,7 +226,7 @@ resources:
             - task_key: test_bronze_customer
             - task_key: run_silver_geolocation
           notebook_task:
-            notebook_path: src/task/silver/silver_customer.py
+            notebook_path: task/silver/silver_customer.py
             base_parameters:
               bronze_table_input: "customer_raw"
               silver_geo_table_input: "geolocation"
@@ -239,7 +239,7 @@ resources:
             - task_key: test_bronze_product
             - task_key: test_bronze_product_translation
           notebook_task:
-            notebook_path: src/task/silver/silver_product.py
+            notebook_path: task/silver/silver_product.py
             base_parameters:
               bronze_product_table_input: "product_raw"
               bronze_translation_table_input: "product_category_name_translation_raw"
@@ -251,7 +251,7 @@ resources:
           depends_on: 
             - task_key: test_bronze_seller
           notebook_task:
-            notebook_path: src/task/silver/silver_seller.py
+            notebook_path: task/silver/silver_seller.py
             base_parameters:
               bronze_table_input: "seller_raw"
               silver_table_output: "seller"
@@ -262,7 +262,7 @@ resources:
           depends_on: 
             - task_key: test_bronze_order
           notebook_task:
-            notebook_path: src/task/silver/silver_order.py
+            notebook_path: task/silver/silver_order.py
             base_parameters:
               bronze_table_input: "order_raw"
               silver_table_output: "order"
@@ -273,7 +273,7 @@ resources:
           depends_on: 
             - task_key: test_bronze_order_item
           notebook_task:
-            notebook_path: src/task/silver/silver_order_item.py
+            notebook_path: task/silver/silver_order_item.py
             base_parameters:
               bronze_table_input: "order_item_raw"
               silver_table_output: "order_item"
@@ -284,7 +284,7 @@ resources:
           depends_on: 
             - task_key: test_bronze_order_payment
           notebook_task:
-            notebook_path: src/task/silver/silver_order_payment.py
+            notebook_path: task/silver/silver_order_payment.py
             base_parameters:
               bronze_table_input: "order_payment_raw"
               silver_table_output: "order_payment"
@@ -295,7 +295,7 @@ resources:
           depends_on: 
             - task_key: test_bronze_order_review
           notebook_task:
-            notebook_path: src/task/silver/silver_order_review.py
+            notebook_path: task/silver/silver_order_review.py
             base_parameters:
               bronze_table_input: "order_review_raw"
               silver_table_output: "order_review"
@@ -309,7 +309,7 @@ resources:
           depends_on:
             - task_key: run_silver_geolocation
           notebook_task:
-            notebook_path: src/test/silver/test_silver_geolocation.py
+            notebook_path: test/silver/test_silver_geolocation.py
           environment_key: "Default"
 
         - task_key: test_silver_customer
@@ -317,7 +317,7 @@ resources:
           depends_on:
             - task_key: run_silver_customer
           notebook_task:
-            notebook_path: src/test/silver/test_silver_customer.py
+            notebook_path: test/silver/test_silver_customer.py
           environment_key: "Default"
 
         - task_key: test_silver_product
@@ -325,7 +325,7 @@ resources:
           depends_on:
             - task_key: run_silver_product
           notebook_task:
-            notebook_path: src/test/silver/test_silver_product.py
+            notebook_path: test/silver/test_silver_product.py
           environment_key: "Default"
 
         - task_key: test_silver_seller
@@ -333,7 +333,7 @@ resources:
           depends_on:
             - task_key: run_silver_seller
           notebook_task:
-            notebook_path: src/test/silver/test_silver_seller.py
+            notebook_path: test/silver/test_silver_seller.py
           environment_key: "Default"
 
         - task_key: test_silver_order
@@ -341,7 +341,7 @@ resources:
           depends_on:
             - task_key: run_silver_order
           notebook_task:
-            notebook_path: src/test/silver/test_silver_order.py
+            notebook_path: test/silver/test_silver_order.py
           environment_key: "Default"
 
         - task_key: test_silver_order_item
@@ -349,7 +349,7 @@ resources:
           depends_on:
             - task_key: run_silver_order_item
           notebook_task:
-            notebook_path: src/test/silver/test_silver_order_item.py
+            notebook_path: test/silver/test_silver_order_item.py
           environment_key: "Default"
 
         - task_key: test_silver_order_payment
@@ -357,7 +357,7 @@ resources:
           depends_on:
             - task_key: run_silver_order_payment
           notebook_task:
-            notebook_path: src/test/silver/test_silver_order_payment.py
+            notebook_path: test/silver/test_silver_order_payment.py
           environment_key: "Default"
 
         - task_key: test_silver_order_review
@@ -365,7 +365,7 @@ resources:
           depends_on:
             - task_key: run_silver_order_review
           notebook_task:
-            notebook_path: src/test/silver/test_silver_order_review.py
+            notebook_path: test/silver/test_silver_order_review.py
           environment_key: "Default"
 
         # -----------------------------------------------

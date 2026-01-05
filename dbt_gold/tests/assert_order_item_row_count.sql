@@ -7,7 +7,6 @@ silver_count AS (
     FROM {{ source('olist_silver', 'order_item') }} oi
     INNER JOIN {{ source('olist_silver', 'order') }} o
         ON oi.order_id = o.order_id
-    WHERE o.order_status IN ('delivered', 'shipped')
 )
 SELECT
     g.cnt AS gold_row_count,
