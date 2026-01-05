@@ -1,0 +1,58 @@
+name: order_item
+layer: silver
+version: "1.0.0"
+description: |
+  Cleaned order item data.
+  Validates price and freight_value are non-negative.
+  Filters out invalid records.
+
+source:
+  table: bronze.order_item_raw
+
+upstream:
+  - bronze.order_item_raw
+
+columns:
+  - name: order_id
+    type: string
+    nullable: false
+    description: Foreign key to order table
+    tags: [primary_key, foreign_key]
+
+  - name: order_item_id
+    type: integer
+    nullable: false
+    description: Sequential item number within order (1, 2, 3...)
+    tags: [primary_key]
+
+  - name: product_id
+    type: string
+    nullable: false
+    description: Foreign key to product table
+    tags: [foreign_key]
+
+  - name: seller_id
+    type: string
+    nullable: false
+    description: Foreign key to seller table
+    tags: [foreign_key]
+
+  - name: shipping_limit_date
+    type: timestamp
+    nullable: true
+    description: Seller shipping deadline timestamp
+
+  - name: price
+    type: double
+    nullable: false
+    description: Item price in BRL (validated >= 0)
+
+  - name: freight_value
+    type: double
+    nullable: false
+    description: Shipping cost in BRL (validated >= 0)
+
+metadata:
+  owner: data-engineering
+  created_at: "2024-01-01"
+  updated_at: "2024-01-05"

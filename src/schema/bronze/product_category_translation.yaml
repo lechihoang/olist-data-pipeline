@@ -1,0 +1,30 @@
+name: product_category_translation
+layer: bronze
+version: "1.0.0"
+description: |
+  Portuguese to English translation for product categories.
+  Static reference data used to translate category names in Silver layer.
+  This table is merged into the product table during Silver processing.
+
+source:
+  file: product_category_name_translation.csv
+  format: csv
+  encoding: utf-8
+
+columns:
+  - name: product_category_name
+    type: string
+    nullable: true
+    description: Product category name in Portuguese
+    tags: [primary_key]
+
+  - name: product_category_name_english
+    type: string
+    nullable: true
+    description: Product category name translated to English
+
+metadata:
+  owner: data-engineering
+  created_at: "2024-01-01"
+  updated_at: "2024-01-05"
+  note: Merged into product table in Silver layer - no separate Silver schema

@@ -1,9 +1,0 @@
-[
-    { "name": "review_id", "type": "string", "nullable": true },
-    { "name": "order_id", "type": "string", "nullable": true },
-    { "name": "review_score", "type": "integer", "nullable": true },
-    { "name": "review_comment_title", "type": "string", "nullable": true },
-    { "name": "review_comment_message", "type": "string", "nullable": true },
-    { "name": "review_creation_date", "type": "string", "nullable": true },
-    { "name": "review_answer_timestamp", "type": "string", "nullable": true }
-]

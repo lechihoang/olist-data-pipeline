@@ -1,8 +1,8 @@
 # Databricks notebook source
 
-import json
 import os
 import logging
+import yaml
 from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, current_timestamp
@@ -23,7 +23,7 @@ CATALOG = os.getenv("CATALOG", "olist_project")
 BRONZE_SCHEMA = os.getenv("BRONZE_SCHEMA", "bronze")
 SILVER_SCHEMA = os.getenv("SILVER_SCHEMA", "silver")
 STAGING_SCHEMA = os.getenv("STAGING_SCHEMA", "staging")
-LANDING_VOLUME = os.getenv("LANDING_VOLUME", "landing_zone")
+LANDING_VOLUME = os.getenv("LANDING_VOLUME", "lakehouse")
 
 
 def get_spark_type(type_name: str):
@@ -37,22 +37,35 @@ def get_spark_type(type_name: str):
     return type_map.get(type_name.lower(), StringType())
 
 
-def load_schema_from_json(table_name: str, schema_base_path: str) -> StructType:
-    schema_path = f"{schema_base_path}/{table_name}.json"
+def load_schema_from_yaml(table_name: str, schema_base_path: str, layer: str = "bronze") -> StructType:
+    """
+    Load schema from YAML file in the schema registry.
+    
+    Args:
+        table_name: Name of the table (e.g., 'customer_raw', 'order_raw')
+        schema_base_path: Base path to schema directory
+        layer: Layer name ('bronze' or 'silver')
+    
+    Returns:
+        StructType for Spark DataFrame
+    """
+    # Map table name to schema file name (remove _raw suffix)
+    schema_name = table_name.replace("_raw", "")
+    schema_path = f"{schema_base_path}/{layer}/{schema_name}.yaml"
     
     logger.info(f"  Reading schema from: {schema_path}")
     
     if not os.path.exists(schema_path):
         raise FileNotFoundError(
             f"Schema file not found at: {schema_path}. "
-            f"Please check schema_base_path parameter or ensure {table_name}.json exists."
+            f"Please check schema_base_path parameter or ensure {schema_name}.yaml exists."
         )
     
     fields = []
     
     with open(schema_path, 'r') as f:
-        schema_json = json.load(f)
-        for col_def in schema_json:
+        schema_def = yaml.safe_load(f)
+        for col_def in schema_def['columns']:
             fields.append(
                 StructField(
                     col_def['name'],
@@ -61,7 +74,7 @@ def load_schema_from_json(table_name: str, schema_base_path: str) -> StructType:
                 )
             )
             
-    logger.info("  Schema loaded successfully.")
+    logger.info(f"  Schema loaded successfully (version: {schema_def.get('version', 'unknown')})")
     return StructType(fields)
 
 
@@ -115,7 +128,7 @@ if __name__ == "__main__":
     schema_base_path = dbutils.widgets.getArgument("schema_base_path", "/Workspace/${workspace.file_path}/src/schemas")
     logger.info(f"  Schema base path: {schema_base_path}")
     
-    loaded_schema = load_schema_from_json(target_table_name, schema_base_path)
+    loaded_schema = load_schema_from_yaml(target_table_name, schema_base_path)
 
     landing_volume_path = f"/Volumes/{CATALOG}/{STAGING_SCHEMA}/{LANDING_VOLUME}/{source_dir_name}"
     

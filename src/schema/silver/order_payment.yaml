@@ -1,0 +1,46 @@
+name: order_payment
+layer: silver
+version: "1.0.0"
+description: |
+  Cleaned payment data.
+  Validates payment_value is non-negative.
+  Ensures payment_type is not empty.
+
+source:
+  table: bronze.order_payment_raw
+
+upstream:
+  - bronze.order_payment_raw
+
+columns:
+  - name: order_id
+    type: string
+    nullable: false
+    description: Foreign key to order table
+    tags: [primary_key, foreign_key]
+
+  - name: payment_sequential
+    type: integer
+    nullable: false
+    description: Sequential payment number within order (1, 2, 3...)
+    tags: [primary_key]
+
+  - name: payment_type
+    type: string
+    nullable: false
+    description: Payment method (credit_card, boleto, voucher, debit_card)
+
+  - name: payment_installments
+    type: integer
+    nullable: true
+    description: Number of installments for this payment
+
+  - name: payment_value
+    type: double
+    nullable: false
+    description: Payment amount in BRL (validated >= 0)
+
+metadata:
+  owner: data-engineering
+  created_at: "2024-01-01"
+  updated_at: "2024-01-05"

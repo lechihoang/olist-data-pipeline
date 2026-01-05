@@ -1,0 +1,74 @@
+# Schema Registry for Olist E-commerce Pipeline
+# Single source of truth for all table schemas
+
+name: olist-schema-registry
+version: "1.0.0"
+description: |
+  Central registry of all schema definitions for the Olist E-commerce 
+  data pipeline. This file indexes all entities and their available 
+  layer definitions.
+
+layers:
+  bronze:
+    description: Raw data ingestion layer
+    path: ./bronze
+    usage: Auto Loader schema enforcement
+    
+  silver:
+    description: Cleaned and enriched data layer
+    path: ./silver
+    usage: Documentation only (transforms in code)
+
+entities:
+  - name: customer
+    description: Customer information with location data
+    layers: [bronze, silver]
+    primary_key: customer_id
+    business_key: customer_unique_id
+    
+  - name: order
+    description: Order header with status and timestamps
+    layers: [bronze, silver]
+    primary_key: order_id
+    
+  - name: order_item
+    description: Order line items with price and freight
+    layers: [bronze, silver]
+    primary_key: [order_id, order_item_id]
+    
+  - name: order_payment
+    description: Payment transactions per order
+    layers: [bronze, silver]
+    primary_key: [order_id, payment_sequential]
+    
+  - name: order_review
+    description: Customer reviews with scores
+    layers: [bronze, silver]
+    primary_key: review_id
+    
+  - name: product
+    description: Product catalog with category and dimensions
+    layers: [bronze, silver]
+    primary_key: product_id
+    
+  - name: seller
+    description: Seller information with location
+    layers: [bronze, silver]
+    primary_key: seller_id
+    
+  - name: geolocation
+    description: Brazilian ZIP code coordinates
+    layers: [bronze, silver]
+    primary_key: geolocation_zip_code_prefix
+    
+  - name: product_category_translation
+    description: Portuguese to English category translation
+    layers: [bronze]
+    primary_key: product_category_name
+    note: Merged into product table in Silver layer
+
+metadata:
+  owner: data-engineering
+  created_at: "2024-01-01"
+  updated_at: "2024-01-05"
+  repository: https://github.com/yourusername/brazil-ecommerce

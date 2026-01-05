@@ -1,0 +1,61 @@
+name: order
+layer: silver
+version: "1.0.0"
+description: |
+  Cleaned order data with validated timestamps.
+  Invalid date sequences are filtered out.
+  All timestamp columns parsed to proper types.
+
+source:
+  table: bronze.order_raw
+
+upstream:
+  - bronze.order_raw
+
+columns:
+  - name: order_id
+    type: string
+    nullable: false
+    description: Unique identifier for the order
+    tags: [primary_key]
+
+  - name: customer_id
+    type: string
+    nullable: false
+    description: Foreign key to customer table
+    tags: [foreign_key]
+
+  - name: order_status
+    type: string
+    nullable: false
+    description: Order status (created, approved, invoiced, processing, shipped, delivered, unavailable, canceled)
+
+  - name: order_purchase_timestamp
+    type: timestamp
+    nullable: false
+    description: Timestamp when the order was placed
+
+  - name: order_approved_at
+    type: timestamp
+    nullable: true
+    description: Timestamp when payment was approved
+
+  - name: order_delivered_carrier_date
+    type: timestamp
+    nullable: true
+    description: Timestamp when order was handed to carrier
+
+  - name: order_delivered_customer_date
+    type: timestamp
+    nullable: true
+    description: Timestamp when order was delivered to customer
+
+  - name: order_estimated_delivery_date
+    type: timestamp
+    nullable: true
+    description: Estimated delivery date shown to customer at purchase
+
+metadata:
+  owner: data-engineering
+  created_at: "2024-01-01"
+  updated_at: "2024-01-05"

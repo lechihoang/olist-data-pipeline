@@ -1,0 +1,61 @@
+name: customer
+layer: silver
+version: "1.0.0"
+description: |
+  Cleaned and enriched customer data.
+  Joined with geolocation for lat/lng coordinates.
+  City/state standardized to uppercase.
+
+source:
+  table: bronze.customer_raw
+
+upstream:
+  - bronze.customer_raw
+  - silver.geolocation
+
+columns:
+  - name: customer_id
+    type: string
+    nullable: false
+    description: Unique identifier for each order-customer combination
+    tags: [primary_key]
+
+  - name: customer_unique_id
+    type: string
+    nullable: false
+    description: Unique identifier for the customer (person)
+    tags: [business_key, pii]
+
+  - name: customer_zip_code_prefix
+    type: string
+    nullable: true
+    description: First 5 digits of customer ZIP code
+
+  - name: customer_city
+    type: string
+    nullable: true
+    description: Customer city name (UPPERCASE)
+    transform: UPPER(customer_city)
+
+  - name: customer_state
+    type: string
+    nullable: true
+    description: Customer state code (2 letters, uppercase)
+    transform: UPPER(customer_state)
+
+  - name: geolocation_lat
+    type: double
+    nullable: true
+    description: Latitude coordinate
+    source: JOIN silver.geolocation ON zip_code_prefix
+
+  - name: geolocation_lng
+    type: double
+    nullable: true
+    description: Longitude coordinate
+    source: JOIN silver.geolocation ON zip_code_prefix
+
+metadata:
+  owner: data-engineering
+  created_at: "2024-01-01"
+  updated_at: "2024-01-05"
