@@ -1,6 +1,4 @@
-# Databricks notebook source
 # Test Silver Customer - Validates data quality for silver customer table
-# Using Pandera for PySpark (compatible with Databricks Serverless)
 
 import os
 import re
@@ -28,22 +26,19 @@ class SilverCustomerSchema(DataFrameModel):
     Validates schema structure and data quality.
     """
     
-    # Define columns with their types and constraints
-    customer_id: T.StringType() = Field(nullable=False)  # Primary key - NOT NULL
-    customer_unique_id: T.StringType() = Field(nullable=False)  # NOT NULL
+    customer_id: T.StringType() = Field(nullable=False)
+    customer_unique_id: T.StringType() = Field(nullable=False)
     customer_zip_code_prefix: T.StringType() = Field(nullable=True)
     customer_city: T.StringType() = Field(nullable=True)
     customer_state: T.StringType() = Field(nullable=True)
     geolocation_lat: T.DoubleType() = Field(nullable=True)
     geolocation_lng: T.DoubleType() = Field(nullable=True)
 
-    # Custom dataframe-level check for row count
     @pa.dataframe_check
     def min_row_count(cls, df) -> bool:
         """Ensure DataFrame has at least 1 row."""
         return df.count() >= 1
 
-    # Custom check for uniqueness of customer_id
     @pa.dataframe_check
     def unique_customer_id(cls, df) -> bool:
         """Ensure customer_id is unique."""
@@ -51,7 +46,6 @@ class SilverCustomerSchema(DataFrameModel):
         distinct_count = df.select("customer_id").distinct().count()
         return total_count == distinct_count
 
-    # Custom check for state format (uppercase 2-letter code)
     @pa.dataframe_check
     def valid_state_format(cls, df) -> bool:
         """Ensure customer_state matches ^[A-Z]{2}$ pattern."""
@@ -74,16 +68,12 @@ def run_tests(spark, table_name: str) -> dict:
     Returns:
         dict with 'success' boolean and 'errors' details
     """
-    # 1. Read table
     df = spark.table(table_name)
     
-    # 2. Validate with Pandera schema
     df_validated = SilverCustomerSchema.validate(check_obj=df)
     
-    # 3. Collect errors from validation
     errors = df_validated.pandera.errors
     
-    # 4. Build result
     result = {
         "success": len(errors) == 0,
         "errors": errors,
@@ -95,7 +85,6 @@ def run_tests(spark, table_name: str) -> dict:
 
 
 # --- ENTRYPOINT ---
-# spark is already available in Databricks notebooks
 CATALOG = os.getenv("CATALOG", "olist_project")
 SILVER_SCHEMA = os.getenv("SILVER_SCHEMA", "silver")
 TABLE_NAME = "customer"
@@ -109,7 +98,6 @@ logger.info(f"Using Pandera schema: SilverCustomerSchema")
 
 result = run_tests(spark, full_table_name)
 
-# Log results
 if result["success"]:
     logger.info(f"--- All tests PASSED for {full_table_name} ---")
     logger.info(f"  Row count: {result['row_count']}")

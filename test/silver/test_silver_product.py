@@ -1,6 +1,4 @@
-# Databricks notebook source
 # Test Silver Product - Validates data quality for silver product table
-# Using Pandera for PySpark (compatible with Databricks Serverless)
 
 import os
 import logging
@@ -27,24 +25,21 @@ class SilverProductSchema(DataFrameModel):
     Validates schema structure and data quality.
     """
     
-    # Define columns with their types and constraints
-    product_id: T.StringType() = Field(nullable=False)  # Primary key - NOT NULL
+    product_id: T.StringType() = Field(nullable=False)
     product_category_name: T.StringType() = Field(nullable=True)
-    product_name_length: T.IntegerType() = Field(nullable=True)  # Fixed typo from raw
-    product_description_length: T.IntegerType() = Field(nullable=True)  # Fixed typo from raw
+    product_name_length: T.IntegerType() = Field(nullable=True)
+    product_description_length: T.IntegerType() = Field(nullable=True)
     product_photos_qty: T.IntegerType() = Field(nullable=True)
     product_weight_g: T.DoubleType() = Field(nullable=True)
     product_length_cm: T.DoubleType() = Field(nullable=True)
     product_height_cm: T.DoubleType() = Field(nullable=True)
     product_width_cm: T.DoubleType() = Field(nullable=True)
 
-    # Custom dataframe-level check for row count
     @pa.dataframe_check
     def min_row_count(cls, df) -> bool:
         """Ensure DataFrame has at least 1 row."""
         return df.count() >= 1
 
-    # Custom check for uniqueness of product_id
     @pa.dataframe_check
     def unique_product_id(cls, df) -> bool:
         """Ensure product_id is unique."""
@@ -52,7 +47,6 @@ class SilverProductSchema(DataFrameModel):
         distinct_count = df.select("product_id").distinct().count()
         return total_count == distinct_count
 
-    # Custom check for product_weight_g >= 0 (allow NULLs)
     @pa.dataframe_check
     def valid_weight(cls, df) -> bool:
         """Ensure product_weight_g >= 0 when not null."""
@@ -61,7 +55,6 @@ class SilverProductSchema(DataFrameModel):
         ).count()
         return invalid_count == 0
 
-    # Custom check for product_length_cm >= 0 (allow NULLs)
     @pa.dataframe_check
     def valid_length(cls, df) -> bool:
         """Ensure product_length_cm >= 0 when not null."""
@@ -70,7 +63,6 @@ class SilverProductSchema(DataFrameModel):
         ).count()
         return invalid_count == 0
 
-    # Custom check for product_height_cm >= 0 (allow NULLs)
     @pa.dataframe_check
     def valid_height(cls, df) -> bool:
         """Ensure product_height_cm >= 0 when not null."""
@@ -79,7 +71,6 @@ class SilverProductSchema(DataFrameModel):
         ).count()
         return invalid_count == 0
 
-    # Custom check for product_width_cm >= 0 (allow NULLs)
     @pa.dataframe_check
     def valid_width(cls, df) -> bool:
         """Ensure product_width_cm >= 0 when not null."""
@@ -100,16 +91,12 @@ def run_tests(spark, table_name: str) -> dict:
     Returns:
         dict with 'success' boolean and 'errors' details
     """
-    # 1. Read table
     df = spark.table(table_name)
     
-    # 2. Validate with Pandera schema
     df_validated = SilverProductSchema.validate(check_obj=df)
     
-    # 3. Collect errors from validation
     errors = df_validated.pandera.errors
     
-    # 4. Build result
     result = {
         "success": len(errors) == 0,
         "errors": errors,
@@ -121,7 +108,6 @@ def run_tests(spark, table_name: str) -> dict:
 
 
 # --- ENTRYPOINT ---
-# spark is already available in Databricks notebooks
 CATALOG = os.getenv("CATALOG", "olist_project")
 SILVER_SCHEMA = os.getenv("SILVER_SCHEMA", "silver")
 TABLE_NAME = "product"
@@ -135,7 +121,6 @@ logger.info(f"Using Pandera schema: SilverProductSchema")
 
 result = run_tests(spark, full_table_name)
 
-# Log results
 if result["success"]:
     logger.info(f"--- All tests PASSED for {full_table_name} ---")
     logger.info(f"  Row count: {result['row_count']}")

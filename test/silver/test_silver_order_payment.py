@@ -1,6 +1,4 @@
-# Databricks notebook source
 # Test Silver Order Payment - Validates data quality for silver order_payment table
-# Using Pandera for PySpark (compatible with Databricks Serverless)
 
 import os
 import logging
@@ -27,20 +25,17 @@ class SilverOrderPaymentSchema(DataFrameModel):
     Validates schema structure and data quality.
     """
     
-    # Define columns with their types and constraints
-    order_id: T.StringType() = Field(nullable=False)  # Composite key - NOT NULL
-    payment_sequential: T.IntegerType() = Field(nullable=False)  # Composite key - NOT NULL
-    payment_type: T.StringType() = Field(nullable=False)  # NOT NULL
+    order_id: T.StringType() = Field(nullable=False)
+    payment_sequential: T.IntegerType() = Field(nullable=False)
+    payment_type: T.StringType() = Field(nullable=False)
     payment_installments: T.IntegerType() = Field(nullable=True)
     payment_value: T.DecimalType(10, 2) = Field(nullable=True)
 
-    # Custom dataframe-level check for row count
     @pa.dataframe_check
     def min_row_count(cls, df) -> bool:
         """Ensure DataFrame has at least 1 row."""
         return df.count() >= 1
 
-    # Custom check for composite key uniqueness
     @pa.dataframe_check
     def unique_composite_key(cls, df) -> bool:
         """Ensure (order_id, payment_sequential) is unique."""
@@ -48,14 +43,12 @@ class SilverOrderPaymentSchema(DataFrameModel):
         distinct_count = df.select("order_id", "payment_sequential").distinct().count()
         return total_count == distinct_count
 
-    # Custom check for payment_sequential >= 1
     @pa.dataframe_check
     def valid_payment_sequential(cls, df) -> bool:
         """Ensure payment_sequential >= 1."""
         invalid_count = df.filter(F.col("payment_sequential") < 1).count()
         return invalid_count == 0
 
-    # Custom check for payment_installments >= 1
     @pa.dataframe_check
     def valid_installments(cls, df) -> bool:
         """Ensure payment_installments >= 1."""
@@ -64,7 +57,6 @@ class SilverOrderPaymentSchema(DataFrameModel):
         ).count()
         return invalid_count == 0
 
-    # Custom check for payment_value >= 0
     @pa.dataframe_check
     def valid_payment_value(cls, df) -> bool:
         """Ensure payment_value >= 0."""
@@ -73,7 +65,6 @@ class SilverOrderPaymentSchema(DataFrameModel):
         ).count()
         return invalid_count == 0
 
-    # Custom check for valid payment_type values
     @pa.dataframe_check
     def valid_payment_type(cls, df) -> bool:
         """Ensure payment_type is in valid set."""
@@ -95,16 +86,12 @@ def run_tests(spark, table_name: str) -> dict:
     Returns:
         dict with 'success' boolean and 'errors' details
     """
-    # 1. Read table
     df = spark.table(table_name)
     
-    # 2. Validate with Pandera schema
     df_validated = SilverOrderPaymentSchema.validate(check_obj=df)
     
-    # 3. Collect errors from validation
     errors = df_validated.pandera.errors
     
-    # 4. Build result
     result = {
         "success": len(errors) == 0,
         "errors": errors,
@@ -116,7 +103,6 @@ def run_tests(spark, table_name: str) -> dict:
 
 
 # --- ENTRYPOINT ---
-# spark is already available in Databricks notebooks
 CATALOG = os.getenv("CATALOG", "olist_project")
 SILVER_SCHEMA = os.getenv("SILVER_SCHEMA", "silver")
 TABLE_NAME = "order_payment"
@@ -130,7 +116,6 @@ logger.info(f"Using Pandera schema: SilverOrderPaymentSchema")
 
 result = run_tests(spark, full_table_name)
 
-# Log results
 if result["success"]:
     logger.info(f"--- All tests PASSED for {full_table_name} ---")
     logger.info(f"  Row count: {result['row_count']}")

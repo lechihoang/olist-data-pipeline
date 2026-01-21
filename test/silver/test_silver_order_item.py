@@ -1,6 +1,4 @@
-# Databricks notebook source
 # Test Silver Order Item - Validates data quality for silver order_item table
-# Using Pandera for PySpark (compatible with Databricks Serverless)
 
 import os
 import logging
@@ -41,22 +39,19 @@ class SilverOrderItemSchema(DataFrameModel):
     Validates schema structure and data quality.
     """
     
-    # Define columns with their types and constraints
-    order_id: T.StringType() = Field(nullable=False)  # Composite key - NOT NULL
-    order_item_id: T.IntegerType() = Field(nullable=False)  # Composite key - NOT NULL
+    order_id: T.StringType() = Field(nullable=False)
+    order_item_id: T.IntegerType() = Field(nullable=False)
     product_id: T.StringType() = Field(nullable=True)
     seller_id: T.StringType() = Field(nullable=True)
     shipping_limit_date: T.TimestampType() = Field(nullable=True)
     price: T.DecimalType(10, 2) = Field(nullable=True)
     freight_value: T.DecimalType(10, 2) = Field(nullable=True)
 
-    # Custom dataframe-level check for row count
     @pa.dataframe_check
     def min_row_count(cls, df) -> bool:
         """Ensure DataFrame has at least 1 row."""
         return df.count() >= 1
 
-    # Custom check for composite key uniqueness
     @pa.dataframe_check
     def unique_composite_key(cls, df) -> bool:
         """Ensure (order_id, order_item_id) is unique."""
@@ -64,14 +59,12 @@ class SilverOrderItemSchema(DataFrameModel):
         distinct_count = df.select("order_id", "order_item_id").distinct().count()
         return total_count == distinct_count
 
-    # Custom check for order_item_id >= 1
     @pa.dataframe_check
     def valid_order_item_id(cls, df) -> bool:
         """Ensure order_item_id >= 1."""
         invalid_count = df.filter(F.col("order_item_id") < 1).count()
         return invalid_count == 0
 
-    # Custom check for price >= 0
     @pa.dataframe_check
     def valid_price(cls, df) -> bool:
         """Ensure price >= 0."""
@@ -80,7 +73,6 @@ class SilverOrderItemSchema(DataFrameModel):
         ).count()
         return invalid_count == 0
 
-    # Custom check for freight_value >= 0
     @pa.dataframe_check
     def valid_freight(cls, df) -> bool:
         """Ensure freight_value >= 0."""
@@ -89,7 +81,6 @@ class SilverOrderItemSchema(DataFrameModel):
         ).count()
         return invalid_count == 0
 
-    # --- TIMESTAMP FORMAT VALIDATION ---
     @pa.dataframe_check
     def valid_shipping_limit_date_format(cls, df) -> bool:
         """Ensure shipping_limit_date follows YYYY-MM-DD HH:MM:SS format."""
@@ -107,16 +98,12 @@ def run_tests(spark, table_name: str) -> dict:
     Returns:
         dict with 'success' boolean and 'errors' details
     """
-    # 1. Read table
     df = spark.table(table_name)
     
-    # 2. Validate with Pandera schema
     df_validated = SilverOrderItemSchema.validate(check_obj=df)
     
-    # 3. Collect errors from validation
     errors = df_validated.pandera.errors
     
-    # 4. Build result
     result = {
         "success": len(errors) == 0,
         "errors": errors,
@@ -128,7 +115,6 @@ def run_tests(spark, table_name: str) -> dict:
 
 
 # --- ENTRYPOINT ---
-# spark is already available in Databricks notebooks
 CATALOG = os.getenv("CATALOG", "olist_project")
 SILVER_SCHEMA = os.getenv("SILVER_SCHEMA", "silver")
 TABLE_NAME = "order_item"
@@ -142,7 +128,6 @@ logger.info(f"Using Pandera schema: SilverOrderItemSchema")
 
 result = run_tests(spark, full_table_name)
 
-# Log results
 if result["success"]:
     logger.info(f"--- All tests PASSED for {full_table_name} ---")
     logger.info(f"  Row count: {result['row_count']}")

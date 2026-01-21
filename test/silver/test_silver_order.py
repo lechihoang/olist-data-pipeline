@@ -1,6 +1,4 @@
-# Databricks notebook source
 # Test Silver Order - Validates data quality for silver order table
-# Using Pandera for PySpark (compatible with Databricks Serverless)
 
 import os
 import logging
@@ -41,23 +39,20 @@ class SilverOrderSchema(DataFrameModel):
     Validates schema structure and data quality.
     """
     
-    # Define columns with their types and constraints
-    order_id: T.StringType() = Field(nullable=False)  # Primary key - NOT NULL
+    order_id: T.StringType() = Field(nullable=False)
     customer_id: T.StringType() = Field(nullable=True)
-    order_status: T.StringType() = Field(nullable=False)  # NOT NULL
-    order_purchase_timestamp: T.TimestampType() = Field(nullable=False)  # NOT NULL
+    order_status: T.StringType() = Field(nullable=False)
+    order_purchase_timestamp: T.TimestampType() = Field(nullable=False)
     order_approved_at: T.TimestampType() = Field(nullable=True)
     order_delivered_carrier_date: T.TimestampType() = Field(nullable=True)
     order_delivered_customer_date: T.TimestampType() = Field(nullable=True)
     order_estimated_delivery_date: T.TimestampType() = Field(nullable=True)
 
-    # Custom dataframe-level check for row count
     @pa.dataframe_check
     def min_row_count(cls, df) -> bool:
         """Ensure DataFrame has at least 1 row."""
         return df.count() >= 1
 
-    # Custom check for uniqueness of order_id
     @pa.dataframe_check
     def unique_order_id(cls, df) -> bool:
         """Ensure order_id is unique."""
@@ -65,7 +60,6 @@ class SilverOrderSchema(DataFrameModel):
         distinct_count = df.select("order_id").distinct().count()
         return total_count == distinct_count
 
-    # Custom check for valid order_status values
     @pa.dataframe_check
     def valid_order_status(cls, df) -> bool:
         """Ensure order_status is in valid set."""
@@ -84,7 +78,6 @@ class SilverOrderSchema(DataFrameModel):
         ).count()
         return invalid_count == 0
 
-    # --- TIMESTAMP FORMAT VALIDATION ---
     @pa.dataframe_check
     def valid_order_purchase_timestamp_format(cls, df) -> bool:
         """Ensure order_purchase_timestamp follows YYYY-MM-DD HH:MM:SS format."""
@@ -122,16 +115,12 @@ def run_tests(spark, table_name: str) -> dict:
     Returns:
         dict with 'success' boolean and 'errors' details
     """
-    # 1. Read table
     df = spark.table(table_name)
     
-    # 2. Validate with Pandera schema
     df_validated = SilverOrderSchema.validate(check_obj=df)
     
-    # 3. Collect errors from validation
     errors = df_validated.pandera.errors
     
-    # 4. Build result
     result = {
         "success": len(errors) == 0,
         "errors": errors,
@@ -143,7 +132,6 @@ def run_tests(spark, table_name: str) -> dict:
 
 
 # --- ENTRYPOINT ---
-# spark is already available in Databricks notebooks
 CATALOG = os.getenv("CATALOG", "olist_project")
 SILVER_SCHEMA = os.getenv("SILVER_SCHEMA", "silver")
 TABLE_NAME = "order"
@@ -157,7 +145,6 @@ logger.info(f"Using Pandera schema: SilverOrderSchema")
 
 result = run_tests(spark, full_table_name)
 
-# Log results
 if result["success"]:
     logger.info(f"--- All tests PASSED for {full_table_name} ---")
     logger.info(f"  Row count: {result['row_count']}")

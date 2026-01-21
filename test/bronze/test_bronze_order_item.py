@@ -1,6 +1,4 @@
-# Databricks notebook source
 # Test Bronze Order Item - Validates data quality for order_item_raw table
-# Using Pandera for PySpark (compatible with Databricks Serverless)
 
 import os
 import logging
@@ -26,16 +24,14 @@ class BronzeOrderItemSchema(DataFrameModel):
     Validates schema structure and data quality.
     """
     
-    # Define columns with their types and constraints
-    order_id: T.StringType() = Field(nullable=False)  # Composite key - NOT NULL
-    order_item_id: T.IntegerType() = Field(nullable=False)  # Composite key - NOT NULL
+    order_id: T.StringType() = Field(nullable=False)
+    order_item_id: T.IntegerType() = Field(nullable=False)
     product_id: T.StringType() = Field(nullable=True)
     seller_id: T.StringType() = Field(nullable=True)
     shipping_limit_date: T.StringType() = Field(nullable=True)
     price: T.DoubleType() = Field(nullable=True)
     freight_value: T.DoubleType() = Field(nullable=True)
 
-    # Custom dataframe-level check for row count
     @pa.dataframe_check
     def min_row_count(cls, df) -> bool:
         """Ensure DataFrame has at least 1 row."""
@@ -53,16 +49,12 @@ def run_tests(spark, table_name: str) -> dict:
     Returns:
         dict with 'success' boolean and 'errors' details
     """
-    # 1. Read table
     df = spark.table(table_name)
     
-    # 2. Validate with Pandera schema
     df_validated = BronzeOrderItemSchema.validate(check_obj=df)
     
-    # 3. Collect errors from validation
     errors = df_validated.pandera.errors
     
-    # 4. Build result
     result = {
         "success": len(errors) == 0,
         "errors": errors,
@@ -74,7 +66,6 @@ def run_tests(spark, table_name: str) -> dict:
 
 
 # --- ENTRYPOINT ---
-# spark is already available in Databricks notebooks
 CATALOG = os.getenv("CATALOG", "olist_project")
 BRONZE_SCHEMA = os.getenv("BRONZE_SCHEMA", "bronze")
 TABLE_NAME = "order_item_raw"
@@ -88,7 +79,6 @@ logger.info(f"Using Pandera schema: BronzeOrderItemSchema")
 
 result = run_tests(spark, full_table_name)
 
-# Log results
 if result["success"]:
     logger.info(f"--- All tests PASSED for {full_table_name} ---")
     logger.info(f"  Row count: {result['row_count']}")

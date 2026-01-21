@@ -1,6 +1,4 @@
-# Databricks notebook source
 # Test Silver Order Review - Validates data quality for silver order_review table
-# Using Pandera for PySpark (compatible with Databricks Serverless)
 
 import os
 import logging
@@ -41,22 +39,19 @@ class SilverOrderReviewSchema(DataFrameModel):
     Validates schema structure and data quality.
     """
     
-    # Define columns with their types and constraints
-    review_id: T.StringType() = Field(nullable=False)  # Composite key - NOT NULL
-    order_id: T.StringType() = Field(nullable=False)  # Composite key - NOT NULL
+    review_id: T.StringType() = Field(nullable=False)
+    order_id: T.StringType() = Field(nullable=False)
     review_score: T.IntegerType() = Field(nullable=True)
     review_comment_title: T.StringType() = Field(nullable=True)
     review_comment_message: T.StringType() = Field(nullable=True)
-    review_creation_date: T.TimestampType() = Field(nullable=False)  # NOT NULL
+    review_creation_date: T.TimestampType() = Field(nullable=False)
     review_answer_timestamp: T.TimestampType() = Field(nullable=True)
 
-    # Custom dataframe-level check for row count
     @pa.dataframe_check
     def min_row_count(cls, df) -> bool:
         """Ensure DataFrame has at least 1 row."""
         return df.count() >= 1
 
-    # Custom check for composite key uniqueness
     @pa.dataframe_check
     def unique_composite_key(cls, df) -> bool:
         """Ensure (review_id, order_id) is unique."""
@@ -64,7 +59,6 @@ class SilverOrderReviewSchema(DataFrameModel):
         distinct_count = df.select("review_id", "order_id").distinct().count()
         return total_count == distinct_count
 
-    # Custom check for review_score between 1 and 5
     @pa.dataframe_check
     def valid_review_score(cls, df) -> bool:
         """Ensure review_score is between 1 and 5."""
@@ -74,7 +68,6 @@ class SilverOrderReviewSchema(DataFrameModel):
         ).count()
         return invalid_count == 0
 
-    # --- TIMESTAMP FORMAT VALIDATION ---
     @pa.dataframe_check
     def valid_review_creation_date_format(cls, df) -> bool:
         """Ensure review_creation_date follows YYYY-MM-DD HH:MM:SS format."""
@@ -97,16 +90,12 @@ def run_tests(spark, table_name: str) -> dict:
     Returns:
         dict with 'success' boolean and 'errors' details
     """
-    # 1. Read table
     df = spark.table(table_name)
     
-    # 2. Validate with Pandera schema
     df_validated = SilverOrderReviewSchema.validate(check_obj=df)
     
-    # 3. Collect errors from validation
     errors = df_validated.pandera.errors
     
-    # 4. Build result
     result = {
         "success": len(errors) == 0,
         "errors": errors,
@@ -118,7 +107,6 @@ def run_tests(spark, table_name: str) -> dict:
 
 
 # --- ENTRYPOINT ---
-# spark is already available in Databricks notebooks
 CATALOG = os.getenv("CATALOG", "olist_project")
 SILVER_SCHEMA = os.getenv("SILVER_SCHEMA", "silver")
 TABLE_NAME = "order_review"
@@ -132,7 +120,6 @@ logger.info(f"Using Pandera schema: SilverOrderReviewSchema")
 
 result = run_tests(spark, full_table_name)
 
-# Log results
 if result["success"]:
     logger.info(f"--- All tests PASSED for {full_table_name} ---")
     logger.info(f"  Row count: {result['row_count']}")
